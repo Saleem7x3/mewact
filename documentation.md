@@ -123,8 +123,32 @@ flowchart LR
 **Purpose**: Executes the selected command code with variable injection.
 
 **Execution Types**:
-- **Python Code**: Direct execution via `exec()` in sandboxed context
-- **Shell Commands**: Execute via `subprocess.Popen()`
+
+| Type | Format | Description |
+|------|--------|-------------|
+| `python` | `{"type": "python", "code": "..."}` | Execute Python code via `exec()` |
+| `hotkey` | `{"type": "hotkey", "keys": ["ctrl", "c"]}` | Keyboard shortcuts via PyAutoGUI |
+| `shell` | `{"type": "shell", "code": "dir"}` | PowerShell/shell commands via `subprocess` |
+| `url` | `{"type": "url", "url": "https://..."}` | Open URLs in default browser |
+| `file` | `{"type": "file", "path": "C:/..."}` | Open files with default application |
+| `sequence` | `{"type": "sequence", "steps": [101, 106]}` | Chain multiple command IDs |
+
+**Example Commands by Type**:
+
+```json
+// Hotkey - simple keyboard shortcuts
+"copy": { "type": "hotkey", "keys": ["ctrl", "c"] }
+"save": { "type": "hotkey", "keys": ["ctrl", "s"] }
+
+// Shell - system commands
+"list files": { "type": "shell", "code": "dir" }
+
+// URL - quick links
+"open github": { "type": "url", "url": "https://github.com" }
+
+// Sequence - macro chains (IDs from command library)
+"quick notepad": { "type": "sequence", "steps": [200, 106], "delay": 1.0 }
+```
 
 **Variable System**:
 
@@ -139,6 +163,20 @@ flowchart LR
 - Command validation before execution
 - Error handling with graceful fallback
 - Session recording capability
+
+### 4. Auto-Rollback System
+
+**Purpose**: Automatically refocuses the chat interface after executing navigation/desktop commands.
+
+**Operation Modes**:
+1. **Tab Search** (`--auto-rollback <chat_name>`): Uses Chrome/Edge tab search (Ctrl+Shift+A) to find the chat by name.
+2. **Tab Toggle** (`--auto-rollback tab`): Uses simple Ctrl+Tab switching (ideal for 2-tab setups).
+3. **Window Switch** (`--auto-rollback window:<title>`): Uses Windows API (`EnumWindows` + `SetForegroundWindow`) to focus a separate application window.
+
+**Technical Logic**:
+- **Triggers**: Executes after `executor.execute()` successfully completes.
+- **Skipping**: Automatically skips rollback for `mew act` and `focus` commands to prevent focus loops.
+- **Coordination**: Clicks the center-bottom area of the screen after focusing to ensure the chat input is active.
 
 ---
 
@@ -168,6 +206,70 @@ stateDiagram-v2
 
 ---
 
+## Available Commands
+
+MewAct comes with a **massive command library** containing over 170+ actions (defined in `command_library.json`). The system intelligently finds the right command for your goal.
+
+### Core Commands
+
+| Command | Action |
+|---------|--------|
+| `open <app>` | Launch an application (e.g. `open calculator`) |
+| `type \| <text>` | Type short text immediately |
+| `type $V1` | Type long text from a variable |
+| `click <text>` | Click on any text visible on screen |
+| `press <key>` | Simulate a key press (e.g. `press enter`, `press f11`) |
+| `wait <N>` | Pause execution for N seconds |
+| `mew act` | Capture screen & auto-paste to chat |
+
+### Hotkey Commands
+
+| Command | Keys | Description |
+|---------|------|-------------|
+| `copy` | Ctrl+C | Copy selected content |
+| `paste` | Ctrl+V | Paste from clipboard |
+| `cut` | Ctrl+X | Cut selected content |
+| `undo` | Ctrl+Z | Undo last action |
+| `redo` | Ctrl+Y | Redo last action |
+| `save` | Ctrl+S | Save current document |
+| `select all` | Ctrl+A | Select all content |
+| `close window` | Alt+F4 | Close active window |
+
+### Tab Navigation Commands
+
+| Command | Action |
+|---------|--------|
+| `focus chat` | Alt+Tab + click input field |
+| `focus chatgpt` | Find ChatGPT window + focus input |
+| `focus gemini` | Find Gemini window + focus input |
+| `focus claude` | Find Claude window + focus input |
+| `switch tab` | Ctrl+Tab + focus input |
+| `previous tab` | Ctrl+Shift+Tab + focus input |
+| `goto chatgpt tab` | Search tabs for "chatgpt" + focus |
+| `goto gemini tab` | Search tabs for "gemini" + focus |
+| `goto claude tab` | Search tabs for "claude" + focus |
+
+### URL Commands
+
+| Command | Action |
+|---------|--------|
+| `open google` | Open `https://google.com` |
+| `open github` | Open `https://github.com` |
+| `open youtube` | Open `https://youtube.com` |
+| `open url \| <url>` | Open custom URL |
+| `open file dialog` | Open the "Open File" system dialog |
+| `open file \| <path>` | Open a specific file directly |
+
+### Shell Commands
+
+| Command | Action |
+|---------|--------|
+| `list files` | Run `dir` command |
+| `system info` | Get OS name and version |
+| `run powershell \| <cmd>` | Execute any shell command |
+
+---
+
 ## Configuration
 
 ### Command-Line Interface
@@ -177,6 +279,7 @@ stateDiagram-v2
 | `--target` | String | Focus on specific window title | `--target "Chrome"` |
 | `--monitors` | List[Int] | Monitor indices (1-based) | `--monitors 1,2` |
 | `--ocr` | String | OCR engine selection | `rapidocr`, `easyocr`, `paddleocr` |
+| `--auto-rollback`| String | Auto-focus back to chat (gemini/chatgpt/claude/tab/window:<title>) | `--auto-rollback gemini` |
 
 ### Configuration Constants
 

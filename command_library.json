@@ -7,6 +7,46 @@
             "code": "subprocess.Popen('start __VAR__', shell=True)",
             "description": "Open any application by name"
         },
+        "run powershell": {
+            "id": 126,
+            "type": "shell",
+            "code": "__VAR__",
+            "description": "Execute a PowerShell/shell command"
+        },
+        "list files": {
+            "id": 127,
+            "type": "shell",
+            "code": "dir",
+            "description": "List files in current directory"
+        },
+        "system info": {
+            "id": 128,
+            "type": "shell",
+            "code": "systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\"",
+            "description": "Get system information"
+        },
+        "open url": {
+            "id": 132,
+            "type": "url",
+            "url": "__VAR__",
+            "description": "Open a custom URL in browser"
+        },
+        "open file": {
+            "id": 133,
+            "type": "file",
+            "path": "__VAR__",
+            "description": "Open a file with its default application"
+        },
+        "quick notepad": {
+            "id": 134,
+            "type": "sequence",
+            "steps": [
+                200,
+                106
+            ],
+            "delay": 1.0,
+            "description": "Open Notepad and wait (ID 200 = open notepad, ID 106 = wait)"
+        },
         "type text": {
             "id": 102,
             "type": "python",
@@ -49,6 +89,66 @@
             "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.3)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(0.5)\npyautogui.press('enter')",
             "description": "Alias for mew act"
         },
+        "focus chat": {
+            "id": 108,
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'tab')\ntime.sleep(0.5)\nimport pyautogui\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)\ntime.sleep(0.2)",
+            "description": "Switch to previous window and click input field"
+        },
+        "focus chatgpt": {
+            "id": 109,
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('ChatGPT')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Focus ChatGPT window and click input field"
+        },
+        "focus gemini": {
+            "id": 110,
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('Gemini')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Focus Gemini window and click input field"
+        },
+        "focus claude": {
+            "id": 111,
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('Claude')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Focus Claude window and click input field"
+        },
+        "switch tab": {
+            "id": 112,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'tab')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Switch to next browser tab and focus input field"
+        },
+        "previous tab": {
+            "id": 113,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'tab')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Switch to previous browser tab and focus input field"
+        },
+        "search tab": {
+            "id": 114,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('__VAR__', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search for tab by name using Chrome tab search (Ctrl+Shift+A)"
+        },
+        "goto chatgpt tab": {
+            "id": 115,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('chatgpt', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search and switch to ChatGPT tab, then focus input"
+        },
+        "goto gemini tab": {
+            "id": 116,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('gemini', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search and switch to Gemini tab, then focus input"
+        },
+        "goto claude tab": {
+            "id": 117,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('claude', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search and switch to Claude tab, then focus input"
+        },
         "open calculator": {
             "type": "python",
             "code": "subprocess.Popen('calc', shell=True)",
@@ -66,12 +166,6 @@
             "code": "subprocess.Popen('start chrome', shell=True)",
             "description": "Open Google Chrome browser",
             "id": 202
-        },
-        "open google": {
-            "type": "python",
-            "code": "import webbrowser\nwebbrowser.open('https://www.google.com')",
-            "description": "Open Google in default browser",
-            "id": 203
         },
         "open bing": {
             "type": "python",
@@ -265,18 +359,6 @@
             "description": "Show a Windows message notification",
             "id": 235
         },
-        "open youtube": {
-            "type": "python",
-            "code": "import webbrowser\nwebbrowser.open('https://www.youtube.com')",
-            "description": "Open YouTube in default browser",
-            "id": 236
-        },
-        "open github": {
-            "type": "python",
-            "code": "import webbrowser\nwebbrowser.open('https://www.github.com')",
-            "description": "Open GitHub in default browser",
-            "id": 237
-        },
         "maximize window": {
             "type": "python",
             "code": "pyautogui.hotkey('win', 'up')",
@@ -445,7 +527,7 @@
             "description": "Create new file/document",
             "id": 265
         },
-        "open file": {
+        "open file dialog": {
             "type": "python",
             "code": "pyautogui.hotkey('ctrl', 'o')",
             "description": "Open file dialog",
@@ -666,18 +748,6 @@
             "code": "pyautogui.hotkey('ctrl', 'shift', 't')",
             "description": "Reopen last closed tab",
             "id": 302
-        },
-        "next tab": {
-            "type": "python",
-            "code": "pyautogui.hotkey('ctrl', 'tab')",
-            "description": "Switch to next tab",
-            "id": 303
-        },
-        "previous tab": {
-            "type": "python",
-            "code": "pyautogui.hotkey('ctrl', 'shift', 'tab')",
-            "description": "Switch to previous tab",
-            "id": 304
         },
         "go to tab 1": {
             "type": "python",
@@ -1362,7 +1432,6 @@
             "code": "subprocess.Popen('start ms-settings:windowsupdate', shell=True)",
             "description": "Open Windows Update",
             "id": 455
-
         }
     }
 }

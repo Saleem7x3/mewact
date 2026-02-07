@@ -22,6 +22,35 @@ python jama_v13.py --target "Chrome"   # Run MewAct
 
 ---
 
+## Recommended Setup
+
+For best results, **keep your AI chat window separate** from other browser tabs:
+
+1. **Separate Window (Best)**: Right-click the ChatGPT/Gemini tab → "Move tab to new window"
+2. **Separate Monitor (Ideal)**: If you have multiple monitors, put the chat on one and work on the other
+3. **Minimize Tabs**: If using tabs, limit to 2 tabs (chat + work) so `switch tab` works reliably
+
+This helps MewAct navigate back to the chat reliably after performing tasks.
+
+---
+
+## 🔄 Auto-Rollback
+
+MewAct can automatically focus back to your chat window/tab after each command. This makes automation seamless as the AI no longer needs to manually switch back.
+
+| Mode | CLI Flag | Use Case |
+|------|----------|----------|
+| **Tab Search** | `--auto-rollback gemini` | Same browser, many tabs (uses Ctrl+Shift+A) |
+| **Tab Toggle** | `--auto-rollback tab` | Exactly 2 tabs (uses Ctrl+Tab) |
+| **Window Switch** | `--auto-rollback window:ChatGPT` | Separate window (uses Windows API) |
+
+**Example:**
+```bash
+python mew.py --auto-rollback gemini
+```
+
+---
+
 ## Usage Examples
 
 ### Example 1: "Help me write an email"
@@ -117,56 +146,6 @@ Let me summarize the results...
 
 ---
 
-## 📘 Documentation
-
-For a deep dive into how MewAct works, configuration options, and troubleshooting, see the [**Full Documentation**](documentation.md).
-
----
-
-## Available Commands
-
-MewAct comes with a **massive command library** containing over 170+ actions (defined in `command_library.json`). The system intelligently finds the right command for your goal, so you don't need to memorize them all.
-
-Below is a quick reference of the **core commands** you'll use most often:
-
-| Command | Action |
-|---------|--------|
-| `open <app>` | Launch an application (e.g. `open calculator`) |
-| `type \| <text>` | Type short text immediately |
-| `type $V1` | Type long text from a variable |
-| `click <text>` | Click on any text visible on screen |
-| `press <key>` | Simulate a key press (e.g. `press enter`, `press f11`) |
-| `wait <N>` | Pause execution for N seconds |
-| `mew act` | Capture screen & auto-paste to chat |
-
-### Variables
-
-**Single variable (inline):**
-
-```text
-1&&$47 type | Hello World 1$&47
-```
-
-**Single variable (stored):**
-
-```text
-&&VAR 1 Your long text here... VAR&&
-1&&$47 type $V1 1$&47
-```
-
-**Multiple variables (for complex commands):**
-
-```text
-&&VAR 1 john@example.com VAR&&
-&&VAR 2 Meeting Tomorrow VAR&&
-&&VAR 3 Hi John, see you at 2pm! VAR&&
-1&&$47 send email 1$&47
-```
-
-Commands use `__VAR__` for inline, or `__VAR1__`, `__VAR2__`, `__VAR3__` for stored variables.
-
----
-
 
 
 ## AI System Prompts
@@ -194,23 +173,30 @@ VARIABLES (for long text):
 &&VAR 1 your long content here VAR&&
 2&&$47 type $V1 2$&47
 
-MULTI-VARIABLE (for complex commands):
-&&VAR 1 recipient@email.com VAR&&
-&&VAR 2 Subject line VAR&&
-3&&$47 send email 3$&47
+RETURNING TO CHAT AFTER NAVIGATION:
+When you navigate away (open link, switch apps), you MUST return to this chat:
+- If chat is in SEPARATE WINDOW: use "focus gemini" or "focus chatgpt"
+- If chat shares browser with OTHER TABS: use "goto gemini tab" (searches and switches)
+- If only 2 TABS: use "switch tab" (Ctrl+Tab)
+After returning, ALWAYS use "mew act" to paste your findings.
 
-VISUAL FORMAT:
-EXEC_ID&&$47 command | variable EXEC_ID$&47
+TAB DETECTION: Look at the first screenshot. Count browser tabs visible at top.
+- 1 tab = You're in dedicated window (ideal setup)
+- 2 tabs = Use "switch tab" to toggle
+- 3+ tabs = Use "goto gemini tab" to search and switch
 
 EXAMPLES:
-1&&$47 open notepad 1$&47
-2&&$47 type | Hello World 2$&47
-3&&$47 mew act 3$&47
+1&&$47 mew act 1$&47
+2&&$47 open chrome 2$&47
+3&&$47 wait 2 3$&47
+4&&$47 type | search query 4$&47
+5&&$47 press enter 5$&47
+6&&$47 wait 3 6$&47
+7&&$47 goto gemini tab 7$&47     ← Return to chat
+8&&$47 mew act 8$&47             ← Paste results
 
-⚠️ CRITICAL: You MUST end EVERY response with this command to see the result:
+⚠️ CRITICAL: You MUST end EVERY response with "mew act" to see the result!
 99&&$47 mew act 99$&47
-
-Always use sequential EXEC_IDs. End workflows with mew act to verify success.
 ```
 
 ### ChatGPT / Claude Custom Instructions
@@ -218,7 +204,23 @@ Always use sequential EXEC_IDs. End workflows with mew act to verify success.
 ```text
 You are an AI Agent with a body (MewAct). Can see screen via OCR.
 Trigger commands by wrapping in: ID&&$47 ... ID$&47
-Always end with: 99&&$47 mew act 99$&47
+
+CRITICAL RULES:
+1. ALWAYS start with: 1&&$47 mew act 1$&47 (to see screen)
+2. After ANY navigation (open app, click link, switch window):
+   - Use "goto chatgpt tab" OR "focus chatgpt" to return here
+   - Then "mew act" to share what you found
+3. ALWAYS end with: 99&&$47 mew act 99$&47
+
+WORKFLOW PATTERN:
+1&&$47 mew act 1$&47              ← See screen
+2&&$47 open chrome 2$&47          ← Do task
+3&&$47 wait 2 3$&47
+4&&$47 type | query 4$&47
+5&&$47 press enter 5$&47
+6&&$47 wait 3 6$&47
+7&&$47 goto chatgpt tab 7$&47     ← RETURN TO CHAT
+8&&$47 mew act 8$&47              ← Share results
 ```
 
 ---
@@ -232,22 +234,59 @@ FORMAT: <ID>&&$47 <command> <ID>$&47
 
 COMMANDS: open <app>, type | <text>, click <text>, press <key>, wait <N>
 VISUAL: mew act → captures screen and auto-pastes into chat
+FOCUS: goto chatgpt tab OR focus chatgpt → return to this chat
 
-⚠️ MUST: ALWAYS start with 1&&$47 mew act 1$&47 to see my screen first!
-
-RULES:
-1. Sequential IDs: 1, 2, 3...
-2. Use wait between app launches
-3. CRITICAL: End EVERY command sequence with 'mew act' to see the result
+⚠️ CRITICAL WORKFLOW:
+1. ALWAYS start with: 1&&$47 mew act 1$&47 (see screen first)
+2. After ANY navigation: "goto chatgpt tab" + "mew act" (return & share)
+3. ALWAYS end with: 99&&$47 mew act 99$&47
 
 VARIABLES:
 &&VAR 1 long content VAR&&
 2&&$47 type $V1 2$&47
+
+EXAMPLE:
+1&&$47 mew act 1$&47
+2&&$47 open chrome 2$&47
+3&&$47 wait 2 3$&47
+4&&$47 goto chatgpt tab 4$&47   ← Return here!
+5&&$47 mew act 5$&47            ← Show results
 ```
 
 ---
 
+## 📘 Documentation
 
+For a deep dive into how MewAct works, execution types, and technical details, see the [**Full Documentation**](documentation.md).
+
+---
+
+## Available Commands
+
+MewAct comes with a **massive command library** (defined in `command_library.json`). The system intelligently matches your goal to the best command.
+
+| Command | Action |
+|---------|--------|
+| `open <app>` | Launch an application (e.g. `open calculator`) |
+| `type \| <text>` | Type short text immediately |
+| `type $V1` | Type long text from a variable |
+| `click <text>` | Click on any text visible on screen |
+| `press <key>` | Simulate a key press (e.g. `press enter`, `press f11`) |
+| `wait <N>` | Pause execution for N seconds |
+| `mew act` | Capture screen & auto-paste to chat |
+
+### Execution Types
+
+| Type | Example |
+|------|---------|
+| `python` | Normal Python automation code |
+| `hotkey` | `copy`, `paste`, `undo`, `redo`, `save` |
+| `shell` | `run powershell \| <cmd>`, `list files`, `system info` |
+| `url` | `open url \| <url>`, `open google`, `open github` |
+| `file` | `open file \| <path>`, `open file dialog` |
+| `sequence` | Chain multiple command IDs |
+
+---
 
 ## ⚠️ Security
 

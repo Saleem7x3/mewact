@@ -46,6 +46,11 @@ VAR_PATTERN = r"&&VAR\s*(\d+)\s+(.*?)\s*VAR&&"
 LOOP_DELAY = 0.2
 DEBUG_OCR = False 
 
+# --- AUTO-ROLLBACK CONFIG ---
+# When enabled, automatically focuses back to chat window after each command
+AUTO_ROLLBACK_ENABLED = False
+AUTO_ROLLBACK_CHAT = "gemini"  # "gemini", "chatgpt", "claude", or "tab" for generic tab switch
+
 # --- 0. DEPENDENCY CHECK ---
 def check_deps():
     try:
@@ -204,6 +209,14 @@ class LibraryManager:
             self.last_action_time = now
             self.current_session_data.append({"command": command, "code": code, "pause": pause})
             print(f"{Fore.BLUE}[REC] Step {len(self.current_session_data)}: {command}")
+
+    def get_command_by_id(self, cmd_id: int) -> Optional[Dict]:
+        """Find a command by its ID for sequence execution"""
+        for name, cmd in self.library.get("commands", {}).items():
+            if cmd.get("id") == cmd_id:
+                return {**cmd, "name": name}
+        return None
+
 
 # --- 2. PERCEPTION ENGINE ---
 class WindowCapture:
@@ -659,7 +672,7 @@ class CognitivePlanner:
 class ActionExecutor:
     def __init__(self, library_manager):
         self.library = library_manager
-        self.locals = {"pyautogui": pyautogui, "subprocess": subprocess, "time": time, "os": os, "open_app": self._open_app_impl}
+        self.locals = {"pyautogui": pyautogui, "subprocess": subprocess, "time": time, "os": os, "open_app": self._open_app_impl, "webbrowser": webbrowser}
 
     def _open_app_impl(self, app_name):
         if platform.system() == "Windows":
@@ -667,24 +680,117 @@ class ActionExecutor:
         else:
             subprocess.Popen(["open", "-a", app_name])
 
-    def execute(self, code: Union[str, List[str]], record=True) -> bool:
-        if not code: return False
+    def execute(self, code: Union[str, List[str]], record=True, cmd_type="python", cmd_data=None) -> bool:
+        """
+        Execute a command based on its type.
+        Supported types: python, shell, hotkey, sequence, url, file
+        """
+        if not code and cmd_type == "python": return False
+        
+        print(f"{Fore.YELLOW}    -> Executing ({cmd_type})...")
+        
+        try:
+            if cmd_type == "python":
+                return self._exec_python(code)
+            elif cmd_type == "shell":
+                return self._exec_shell(code)
+            elif cmd_type == "hotkey":
+                return self._exec_hotkey(cmd_data)
+            elif cmd_type == "sequence":
+                return self._exec_sequence(cmd_data)
+            elif cmd_type == "url":
+                return self._exec_url(cmd_data)
+            elif cmd_type == "file":
+                return self._exec_file(cmd_data)
+            else:
+                print(f"{Fore.RED}Unknown execution type: {cmd_type}")
+                return False
+        except Exception as e:
+            print(f"{Fore.RED}Runtime Error ({cmd_type}): {e}")
+            return False
+
+    def _exec_python(self, code: Union[str, List[str]]) -> bool:
+        """Execute Python code using exec()"""
         if isinstance(code, list): code = "\n".join(code)
         if code.startswith("#PLAY_SESSION:"):
             name = code.split(":")[1]
             for s in self.library.sessions.get(name, []):
-                time.sleep(s['pause']); self.execute(s['code'], False)
+                time.sleep(s['pause']); self._exec_python(s['code'])
             return True
 
-        print(f"{Fore.YELLOW}    -> Executing...")
         buffer = io.StringIO()
-        try:
-            with contextlib.redirect_stdout(buffer): exec(code, self.locals, self.locals)
-            print(f"{Fore.GREEN}RESULT: {buffer.getvalue().strip() or 'Success'}")
-            return True
-        except Exception as e:
-            print(f"{Fore.RED}Runtime Error: {e}")
+        with contextlib.redirect_stdout(buffer): exec(code, self.locals, self.locals)
+        print(f"{Fore.GREEN}RESULT: {buffer.getvalue().strip() or 'Success'}")
+        return True
+
+    def _exec_shell(self, code: str) -> bool:
+        """Execute shell/PowerShell command"""
+        result = subprocess.run(code, shell=True, capture_output=True, text=True)
+        if result.stdout:
+            print(f"{Fore.GREEN}OUTPUT: {result.stdout.strip()}")
+        if result.stderr:
+            print(f"{Fore.YELLOW}STDERR: {result.stderr.strip()}")
+        print(f"{Fore.GREEN}RESULT: Exit code {result.returncode}")
+        return result.returncode == 0
+
+    def _exec_hotkey(self, data: dict) -> bool:
+        """Execute keyboard hotkey - data: {"keys": ["ctrl", "c"]}"""
+        keys = data.get("keys", [])
+        if not keys:
+            print(f"{Fore.RED}Hotkey error: No keys specified")
             return False
+        pyautogui.hotkey(*keys)
+        print(f"{Fore.GREEN}RESULT: Pressed {'+'.join(keys)}")
+        return True
+
+    def _exec_sequence(self, data: dict) -> bool:
+        """Execute a sequence of command IDs - data: {"steps": [101, 106, 102], "delay": 0.5}"""
+        steps = data.get("steps", [])
+        delay = data.get("delay", 0.5)
+        if not steps:
+            print(f"{Fore.RED}Sequence error: No steps specified")
+            return False
+        
+        for i, cmd_id in enumerate(steps):
+            print(f"{Fore.CYAN}  Sequence step {i+1}/{len(steps)}: CMD_ID {cmd_id}")
+            cmd = self.library.get_command_by_id(cmd_id)
+            if cmd:
+                cmd_type = cmd.get("type", "python")
+                cmd_code = cmd.get("code", "")
+                cmd_data = {k: v for k, v in cmd.items() if k not in ["id", "type", "code", "description"]}
+                self.execute(cmd_code, True, cmd_type, cmd_data)
+                if i < len(steps) - 1:
+                    time.sleep(delay)
+            else:
+                print(f"{Fore.RED}  Command ID {cmd_id} not found")
+        
+        print(f"{Fore.GREEN}RESULT: Sequence complete ({len(steps)} steps)")
+        return True
+
+    def _exec_url(self, data: dict) -> bool:
+        """Open URL in browser - data: {"url": "https://..."}"""
+        url = data.get("url", "")
+        if not url:
+            print(f"{Fore.RED}URL error: No URL specified")
+            return False
+        webbrowser.open(url)
+        print(f"{Fore.GREEN}RESULT: Opened {url}")
+        return True
+
+    def _exec_file(self, data: dict) -> bool:
+        """Open file with default application - data: {"path": "C:/path/to/file"}"""
+        path = data.get("path", "")
+        if not path:
+            print(f"{Fore.RED}File error: No path specified")
+            return False
+        if platform.system() == "Windows":
+            os.startfile(path)
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+        print(f"{Fore.GREEN}RESULT: Opened {path}")
+        return True
 
 # --- 5. SENTINEL ---
 class PassiveSentinel:
@@ -695,6 +801,62 @@ class PassiveSentinel:
         self.executed_ids = set()
         self.text_history = collections.deque(maxlen=10)  # Increased buffer for long triggers
         self.pending_triggers = {}  # {id: partial_content} for triggers waiting for end delimiter
+
+    def _execute_auto_rollback(self, cmd: str):
+        """Auto-focus back to chat window if enabled. Skip for mew act and focus commands."""
+        if not AUTO_ROLLBACK_ENABLED:
+            return
+        
+        # Skip rollback for perception/focus commands (they don't navigate away)
+        skip_commands = ["mew act", "mewact", "focus", "goto", "switch tab", "previous tab"]
+        if any(skip in cmd.lower() for skip in skip_commands):
+            return
+        
+        print(f"{Fore.CYAN}    [AUTO-ROLLBACK] Focusing back to {AUTO_ROLLBACK_CHAT}...")
+        time.sleep(0.5)  # Brief pause before rollback
+        
+        # Execute the appropriate focus method
+        if AUTO_ROLLBACK_CHAT == "tab":
+            # Simple Ctrl+Tab for 2-tab setup
+            pyautogui.hotkey('ctrl', 'tab')
+            time.sleep(0.3)
+        elif AUTO_ROLLBACK_CHAT.startswith("window:"):
+            # Window mode: Use Windows API to find and focus window by title
+            # Format: --auto-rollback window:ChatGPT or window:Gemini
+            window_title = AUTO_ROLLBACK_CHAT.split(":", 1)[1]
+            self._focus_window_by_title(window_title)
+        else:
+            # Tab search mode: Use Chrome tab search (Ctrl+Shift+A)
+            pyautogui.hotkey('ctrl', 'shift', 'a')
+            time.sleep(0.5)
+            pyautogui.write(AUTO_ROLLBACK_CHAT, interval=0.02)
+            time.sleep(0.3)
+            pyautogui.press('enter')
+            time.sleep(0.5)
+        
+        # Click input field at bottom center
+        screen_width, screen_height = pyautogui.size()
+        pyautogui.click(screen_width // 2, screen_height - 100)
+        print(f"{Fore.GREEN}    [AUTO-ROLLBACK] Focused on {AUTO_ROLLBACK_CHAT}")
+
+    def _focus_window_by_title(self, title: str):
+        """Focus a window by its title using Windows API."""
+        user32 = ctypes.windll.user32
+        
+        def callback(hwnd, _):
+            if user32.IsWindowVisible(hwnd):
+                length = user32.GetWindowTextLengthW(hwnd)
+                if length > 0:
+                    buff = ctypes.create_unicode_buffer(length + 1)
+                    user32.GetWindowTextW(hwnd, buff, length + 1)
+                    if title.lower() in buff.value.lower():
+                        user32.SetForegroundWindow(hwnd)
+                        return False
+            return True
+        
+        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+        user32.EnumWindows(WNDENUMPROC(callback), 0)
+        time.sleep(0.5)
 
     def start(self):
         print(f"{Fore.YELLOW}[*] Sentinel Active.")
@@ -740,6 +902,9 @@ class PassiveSentinel:
                     code, is_cached = self.planner.plan(cmd, ui_data)
                     
                     if code and self.executor.execute(code):
+                        # Auto-rollback to chat window if enabled
+                        self._execute_auto_rollback(cmd)
+                        
                         if self.planner.library.is_recording:
                             self.planner.library.record_action(cmd, code)
                         elif not is_cached:
@@ -787,6 +952,8 @@ if __name__ == "__main__":
     parser.add_argument("--target", type=str, help="Target window title")
     parser.add_argument("--monitors", type=str, help="Monitor indices (comma-separated, e.g., '1' or '1,2')")
     parser.add_argument("--ocr", choices=["rapidocr", "easyocr", "paddleocr"], help="Choose OCR engine")
+    parser.add_argument("--auto-rollback", type=str, metavar="CHAT", 
+                        help="Auto-focus back to chat window after commands. Values: gemini, chatgpt, claude, tab, window:<title>")
     args = parser.parse_args()
     
     if args.ocr:
@@ -800,6 +967,11 @@ if __name__ == "__main__":
     if args.monitors:
         TARGET_MONITORS = [int(m.strip()) for m in args.monitors.split(',') if m.strip().isdigit()]
         print(f"{Fore.CYAN}[*] CLI Monitors: {TARGET_MONITORS}")
+    
+    if args.auto_rollback:
+        AUTO_ROLLBACK_ENABLED = True
+        AUTO_ROLLBACK_CHAT = args.auto_rollback.lower()
+        print(f"{Fore.CYAN}[*] AUTO-ROLLBACK ENABLED: Will focus back to '{AUTO_ROLLBACK_CHAT}' after each command")
     
     if not args.target and not args.monitors:
         print(f"{Fore.CYAN}--- JAM A.I. ID-Selector Mode ---")
