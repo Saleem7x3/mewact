@@ -31,6 +31,10 @@
   - `set anchor` (ID 300)
   - `focus anchor` (ID 301)
   - `mew act` (ID 107) - Double enter for safety.
+- **Delays**: Added 1s buffer to `mew act`, `set anchor`, and `focus anchor` to prevent race conditions.
+
+### 4. Bug Fixes
+- **Ollama Connection**: Patched `mew.py` to force connection to `localhost:11434`, fixing path resolution errors.
 
 ### 3. Documentation
 - Updated `README.md` and `documentation.md` with watchdog protocols.
