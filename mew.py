@@ -561,6 +561,19 @@ class PerceptionEngine:
             return False
 
 
+    def wait_for_text(self, target_text, timeout=30):
+        print(f"{Fore.YELLOW}[*] Waiting for text: '{target_text}' (Timeout: {timeout}s)...")
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            ui_data, txt = self.capture_and_scan()
+            if target_text.lower() in txt.lower():
+                print(f"{Fore.GREEN}[+] Text '{target_text}' detected!")
+                return True
+            time.sleep(1) # Poll every second
+        print(f"{Fore.RED}[!] Timeout waiting for text.")
+        return False
+
+
 # --- 3. COGNITIVE PLANNER (ID SELECTOR) ---
 class CognitivePlanner:
     def __init__(self, library_manager):
@@ -604,6 +617,13 @@ class CognitivePlanner:
             parts = goal_clean.split("|", 1)
             goal_clean = parts[0].strip()
             inline_var = parts[1].strip()
+            
+            # Handle Quoted Variables (ignore garbage after quote)
+            # Example: type | "hello" garbage -> var="hello"
+            if inline_var.startswith('"') and '"' in inline_var[1:]:
+                 end_quote = inline_var.find('"', 1)
+                 inline_var = inline_var[1:end_quote]
+                 if DEBUG_OCR: print(f"{Fore.YELLOW}[*] Extracted quoted var: '{inline_var}'")
         
         # 2. Handle common typo " I " instead of " | " (OCR error)
         elif " I " in goal_clean:
@@ -1017,7 +1037,13 @@ class PassiveSentinel:
                     cid_str, cmd = m.group(1), m.group(2).strip()
                     print(f"{Fore.GREEN}    >>> Startup Command #{cid_str}: {cmd}")
                     self.executed_ids.add(cid_str)
-                    code, is_cached = self.planner.plan(cmd)
+                    code, is_cached = self.planner.plan(cmd, ui_data)
+                    # --- Handle Visual Wait (Startup) ---
+                    if code and code.startswith("SYSTEM:WAIT_FOR_TEXT:"):
+                        target_text = code.split(":", 2)[2]
+                        self.perception.wait_for_text(target_text)
+                        code = None # Prevent execution
+
                     if code and self.executor.execute(code):
                         self._execute_auto_rollback(cmd)
                         if self.planner.library.is_recording:
@@ -1057,6 +1083,8 @@ class PassiveSentinel:
                 valid_cmds.sort(key=lambda x: x[0])
 
                 if valid_cmds:
+                    # --- Serial Execution (Force Re-Scan) ---
+                    valid_cmds = valid_cmds[:1] # Process only the first command
                     print(f"\n{Fore.GREEN}[!] Detected {len(valid_cmds)} new command(s).")
 
                 for cid_int, cid_str, cmd in valid_cmds:
@@ -1065,6 +1093,11 @@ class PassiveSentinel:
                     
                     code, is_cached = self.planner.plan(cmd, ui_data)
                     
+                    if code and code.startswith("SYSTEM:WAIT_FOR_TEXT:"):
+                        target_text = code.split(":", 2)[2]
+                        self.perception.wait_for_text(target_text)
+                        code = None # Prevent execution
+
                     if code and self.executor.execute(code):
                         # Auto-rollback to chat window if enabled
                         self._execute_auto_rollback(cmd)

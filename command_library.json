@@ -45,7 +45,8 @@
                 106
             ],
             "delay": 1.0,
-            "description": "Open Notepad and wait (ID 200 = open notepad, ID 106 = wait)"
+            "description": "Open Notepad and wait (ID 200 = open notepad, ID 106 = wait)",
+            "code": "pass # sequence"
         },
         "type text": {
             "id": 102,
@@ -1049,18 +1050,6 @@
             "description": "Press Right arrow key",
             "id": 354
         },
-        "wait 1 second": {
-            "type": "python",
-            "code": "time.sleep(1)",
-            "description": "Wait for 1 second",
-            "id": 355
-        },
-        "wait 3 seconds": {
-            "type": "python",
-            "code": "time.sleep(3)",
-            "description": "Wait for 3 seconds",
-            "id": 356
-        },
         "wait 5 seconds": {
             "type": "python",
             "code": "time.sleep(5)",
@@ -1432,6 +1421,60 @@
             "code": "subprocess.Popen('start ms-settings:windowsupdate', shell=True)",
             "description": "Open Windows Update",
             "id": 455
+        },
+        "open google": {
+            "type": "python",
+            "code": "import webbrowser; webbrowser.open('https://google.com')",
+            "description": "Open Google in default browser",
+            "id": 28
+        },
+        "wait for text": {
+            "type": "python",
+            "code": "SYSTEM:WAIT_FOR_TEXT:__VAR__",
+            "description": "Wait until specific text appears on screen",
+            "id": 900
+        },
+        "set timer": {
+            "type": "python",
+            "code": "import webbrowser, urllib.parse; webbrowser.open('https://www.google.com/search?q=set+timer+for+' + urllib.parse.quote('__VAR__'))",
+            "description": "Set a Google timer for specified duration (e.g. '5 minutes')",
+            "id": 2100
+        },
+        "snap window left": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'left')",
+            "description": "Snap current window to the left",
+            "id": 501
+        },
+        "snap window right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'right')",
+            "description": "Snap current window to the right",
+            "id": 502
+        },
+        "snap window up": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'up')",
+            "description": "Maximize or snap window up",
+            "id": 503
+        },
+        "focus window": {
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('__VAR__')",
+            "description": "Switch focus to a window matching the title",
+            "id": 200
+        },
+        "set anchor": {
+            "type": "python",
+            "code": "import pyautogui, ctypes\nANCHOR_POS = pyautogui.position()\nANCHOR_HWND = ctypes.windll.user32.GetForegroundWindow()\nprint(f'Anchor set at {ANCHOR_POS} (Window: {ANCHOR_HWND})')",
+            "description": "Save current mouse position and active window as anchor",
+            "id": 300
+        },
+        "focus anchor": {
+            "type": "python",
+            "code": "import pyautogui, ctypes, time\nif 'ANCHOR_HWND' in locals():\n    ctypes.windll.user32.SetForegroundWindow(ANCHOR_HWND)\n    time.sleep(0.2)\n    if 'ANCHOR_POS' in locals():\n        pyautogui.click(ANCHOR_POS)\nelse:\n    print('No anchor set.')",
+            "description": "Focus anchored window and click anchored position",
+            "id": 301
         }
     }
 }

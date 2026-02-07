@@ -1,0 +1,20 @@
+START ANCHOR TEST
+
+=== Phase 1: Establish Base ===
+
+2102&&$47 open notepad 2102$&47
+2101&&$47 wait | 3 2101$&47
+300&&$47 set anchor 300$&47
+2104&&$47 type | Anchor set here. 2104$&47
+
+=== Phase 2: Distract ===
+
+101&&$47 open app | calc 101$&47
+2101&&$47 wait | 2 2101$&47
+
+=== Phase 3: Return ===
+
+301&&$47 focus anchor 301$&47
+2104&&$47 type | Returned to anchor successfully. 2104$&47
+
+END TEST
