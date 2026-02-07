@@ -81,7 +81,7 @@
         "mew act": {
             "id": 107,
             "type": "python",
-            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.5)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(2.0)\npyautogui.press('enter')",
+            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.5)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(2.0)\npyautogui.press('enter')\ntime.sleep(0.2)\npyautogui.press('enter')",
             "description": "Copy current screen to clipboard and paste it"
         },
         "mewact": {
@@ -1470,13 +1470,13 @@
         },
         "set anchor": {
             "type": "python",
-            "code": "import pyautogui, ctypes\nANCHOR_POS = pyautogui.position()\nANCHOR_HWND = ctypes.windll.user32.GetForegroundWindow()\nprint(f'Anchor set at {ANCHOR_POS} (Window: {ANCHOR_HWND})')",
+            "code": "import pyautogui, ctypes\nANCHOR_POS = pyautogui.position()\nANCHOR_HWND = ctypes.windll.user32.GetForegroundWindow()\nprint(f'Anchor set at {ANCHOR_POS} (Window: {ANCHOR_HWND})')\npyautogui.press('enter')",
             "description": "Save current mouse position and active window as anchor",
             "id": 300
         },
         "focus anchor": {
             "type": "python",
-            "code": "import pyautogui, ctypes, time\nif 'ANCHOR_HWND' in locals():\n    ctypes.windll.user32.SetForegroundWindow(ANCHOR_HWND)\n    time.sleep(0.2)\n    if 'ANCHOR_POS' in locals():\n        pyautogui.click(ANCHOR_POS)\nelse:\n    print('No anchor set.')",
+            "code": "import pyautogui, ctypes, time\nif 'ANCHOR_HWND' in locals():\n    ctypes.windll.user32.SetForegroundWindow(ANCHOR_HWND)\n    time.sleep(0.2)\n    if 'ANCHOR_POS' in locals():\n        pyautogui.click(ANCHOR_POS)\n    pyautogui.press('enter')\nelse:\n    print('No anchor set.')",
             "description": "Focus anchored window and click anchored position",
             "id": 301
         },

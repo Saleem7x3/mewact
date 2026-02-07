@@ -496,3 +496,10 @@ If an action fails (e.g., OCR didn't find text, window didn't open):
 - **Focus**: `focus window | <title>` restores context if a popup steals focus.
 - **Timer**: `set timer | 5 minutes` enforces time-boxing for open-ended research tasks.
 
+### 5. Idle Watchdog System
+To prevent the agent from getting stuck or sleeping indefinitely:
+- **Flag**: `--idle-timeout <seconds>`
+- **Behavior**: Monitors activity (commands/input). If idle > timeout AND an anchor is set:
+  1. `focus anchor` (ID 301): Returns to home base.
+  2. `mew act` (ID 107): Captures screen and pastes to chat to prompt re-engagement.
+

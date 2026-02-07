@@ -35,8 +35,8 @@ This helps MewAct navigate back to the chat reliably after performing tasks.
 ---
 
 ## 🔄 Auto-Rollback
-
-MewAct can automatically focus back to your chat window/tab after each command. This makes automation seamless as the AI no longer needs to manually switch back.
+- `--auto-rollback <chat>`: Automatically focus back to chat window (gemini, chatgpt, tab) after command.
+- `--idle-timeout <seconds>`: Enable Watchdog to auto-refresh context if idle (requires `set anchor`). This makes automation seamless as the AI no longer needs to manually switch back.
 
 | Mode | CLI Flag | Use Case |
 |------|----------|----------|

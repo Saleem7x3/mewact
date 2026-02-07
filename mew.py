@@ -63,6 +63,11 @@ OCR_MONITOR_STRATEGY = "full" # "full" (default) or "window" (iterates windows o
 AUTO_ROLLBACK_ENABLED = False
 AUTO_ROLLBACK_CHAT = "gemini"  # "gemini", "chatgpt", "claude", or "tab" for generic tab switch
 
+# --- IDLE WATCHDOG CONFIG ---
+LAST_ACTIVITY = time.time()
+IDLE_TIMEOUT = 0 # 0 = Disabled
+
+
 # --- 0. DEPENDENCY CHECK ---
 def check_deps():
     try:
@@ -127,6 +132,47 @@ class VariableStore:
         self._seen_hashes.clear()
 
 VAR_STORE = VariableStore()
+
+# --- WATCHDOG THREAD ---
+class IdleWatchdog(threading.Thread):
+    def __init__(self, executor, timeout):
+        super().__init__(daemon=True)
+        self.executor = executor
+        self.timeout = timeout
+        self.triggered = False
+
+    def run(self):
+        print(f"{Fore.CYAN}[*] Watchdog started (Timeout: {self.timeout}s)")
+        while True:
+            time.sleep(1.0)
+            if self.timeout <= 0: continue
+            
+            idle_time = time.time() - globals()['LAST_ACTIVITY']
+            if idle_time > self.timeout:
+                if not self.triggered:
+                    # Only trigger if anchor is set
+                    if 'ANCHOR_HWND' in self.executor.locals:
+                        print(f"{Fore.YELLOW}[WATCHDOG] Idle for {int(idle_time)}s. Triggering Auto-Mew...")
+                        self.triggered = True
+                        
+                        # Helper to run by ID
+                        def run_id(cid):
+                            cmd = self.executor.library.get_command_by_id(cid)
+                            if cmd: 
+                                self.executor.execute(cmd['code'], cmd_type=cmd['type'], cmd_data=cmd)
+                        
+                        run_id(301) # Focus Anchor
+                        time.sleep(2.0)
+                        run_id(107) # Mew Act
+                        
+                        self.triggered = False
+                    else:
+                        # No anchor, logic
+                        pass
+
+            else:
+                self.triggered = False
+
 
 
 # --- 1. MEMORY MANAGER ---
@@ -844,6 +890,8 @@ class ActionExecutor:
             subprocess.Popen(["open", "-a", app_name])
 
     def execute(self, code: Union[str, List[str]], record=True, cmd_type="python", cmd_data=None) -> bool:
+        globals()['LAST_ACTIVITY'] = time.time()
+
         """
         Execute a command based on its type.
         Supported types: python, shell, hotkey, sequence, url, file
@@ -1172,6 +1220,7 @@ if __name__ == "__main__":
     parser.add_argument("--auto-rollback", type=str, metavar="CHAT", 
                         help="Auto-focus back to chat window after commands. Values: gemini, chatgpt, claude, tab, window:<title>")
     parser.add_argument("--power-saver", action="store_true", help="Enable Adaptive/Scattered OCR mode for low-end PCs")
+    parser.add_argument("--idle-timeout", type=int, default=0, help="Enable Idle Watchdog with specific timeout (seconds)")
     
     parser.add_argument("--scan-mode", choices=["monitor", "window"], default="monitor", help="Scan Mode: monitor (default) or window (iterates all windows)")
     parser.add_argument("--monitor-strategy", choices=["full", "window"], default="full", help="Monitor Strategy: full (default) or window (iterates windows on monitor)")
@@ -1207,6 +1256,10 @@ if __name__ == "__main__":
         globals()['AUTO_ROLLBACK_ENABLED'] = True
         globals()['AUTO_ROLLBACK_CHAT'] = args.auto_rollback.lower()
         print(f"{Fore.CYAN}[*] AUTO-ROLLBACK ENABLED: Will focus back to '{args.auto_rollback.lower()}' after each command")
+
+    if args.idle_timeout > 0:
+        globals()['IDLE_TIMEOUT'] = args.idle_timeout
+        print(f"{Fore.CYAN}[*] IDLE WATCHDOG ENABLED: Timeout {args.idle_timeout}s")
     
     if not args.target and not args.monitors:
         print(f"{Fore.CYAN}--- JAM A.I. ID-Selector Mode ---")
@@ -1255,5 +1308,10 @@ if __name__ == "__main__":
     
     # Add perception engine to executor locals for mew act command
     h.locals["PERCEPTION_ENGINE"] = p
+    
+    # Start Watchdog if enabled
+    if globals().get('IDLE_TIMEOUT', 0) > 0:
+        wd = IdleWatchdog(h, globals()['IDLE_TIMEOUT'])
+        wd.start()
     
     PassiveSentinel(p, b, h).start()
