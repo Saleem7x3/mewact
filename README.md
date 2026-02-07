@@ -131,7 +131,7 @@ This creates a **visual feedback loop** — the AI sees what happened, adjusts, 
 
 ---
 
-## 🤖 All Commands
+## 🤖 Commands
 
 | Command | What it does |
 |---------|--------------|
@@ -142,6 +142,8 @@ This creates a **visual feedback loop** — the AI sees what happened, adjusts, 
 | `press <key>` | Press keyboard key |
 | `wait <N>` | Wait N seconds |
 | `mew act` | 📸 Screenshot + auto-paste |
+
+Check the command library for all the hundreds of commands.
 
 ### Variables
 
@@ -296,5 +298,6 @@ If MewAct helped you, consider buying me a coffee!
   <b>🐱 MewAct — Where AI Gets Eyes and Hands</b><br>
   <i>Let your chatbot do more than just chat.</i>
 </p>
+
 
 
