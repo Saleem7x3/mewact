@@ -1,4 +1,4 @@
-# MewAct
+🐱# MewAct
 
 **AI Chatbot Desktop Automation Bridge**
 
@@ -354,3 +354,4 @@ If MewAct helped you, consider buying me a coffee!
   <b>MewAct — AI Desktop Automation</b><br>
   <i>Bridge for Cloud AI and Local Execution</i>
 </p>
+
