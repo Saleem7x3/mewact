@@ -1098,6 +1098,25 @@ class PassiveSentinel:
                         self.perception.wait_for_text(target_text)
                         code = None # Prevent execution
 
+                    # --- Handle Batch Execution (Notepad Notedown) ---
+                    if code and code.startswith("SYSTEM:NOTEDOWN:"):
+                        print(f"{Fore.CYAN}[NOTEDOWN] Starting Batch Execution...")
+                        content = code.split(":", 2)[2]
+                        subprocess.Popen('notepad'); time.sleep(1.0)
+                        # Use ';;' as separator to allow '|' inside commands (e.g. 'type | text')
+                        # Fallback to '|' only if ';;' is missing to support simple lists
+                        separator = ';;' if ';;' in content else '|'
+                        lines = [x.strip() for x in content.replace(separator, '\n').split('\n') if x.strip()]
+                        for line in lines: pyautogui.write(line + '\n')
+                        
+                        for i, cmd_text in enumerate(lines):
+                            print(f"{Fore.CYAN}    [BATCH {i+1}/{len(lines)}] {cmd_text}")
+                            batch_ui, _ = self.perception.capture_and_scan() # Fresh scan
+                            batch_code, _ = self.planner.plan(cmd_text, batch_ui)
+                            if batch_code and not batch_code.startswith("SYSTEM:") and self.executor.execute(batch_code):
+                                self._execute_auto_rollback(cmd_text)
+                        code = None # Done handling
+
                     if code and self.executor.execute(code):
                         # Auto-rollback to chat window if enabled
                         self._execute_auto_rollback(cmd)
