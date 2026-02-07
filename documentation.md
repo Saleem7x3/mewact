@@ -449,3 +449,50 @@ Converts mathematical alphanumeric symbols (U+1D400–U+1D7FF) to standard ASCII
 - Review `command_library.json` regularly
 - Use `--target` flag to limit scope
 - Enable debug mode for initial testing
+
+---
+
+## Agentic Operational Protocol
+
+To achieve robust autonomous desktop control, chatbots (Agents) must follow this strict architectural protocol. This ensures reliability, error recovery, and consistent state management.
+
+### 1. The Perception-Cognition-Action Loop
+
+Agents must operate in a closed loop:
+
+1.  **Observe**: Always start with `mew act` to get the current state (screenshot).
+2.  **Orient**: Analyze the screenshot. Identify active windows, tabs, and available UI elements.
+3.  **Decide**: Select the smallest logical step. **Do not plan too far ahead** as UI state changes.
+4.  **Act**: Execute the command (ID 1, 2, 3...).
+5.  **Verify**: Loop back to Step 1 (`mew act`) to confirm the action had the desired effect.
+
+### 2. Task Stratification
+
+#### A. Short Tasks (Reflexive)
+*Definition*: Single-step or atomic actions (e.g., "Open Calculator", "Type Hello").
+*Protocol*:
+- **Direct Execution**: Issue command immediate.
+- **Verification**: Optional, unless critical.
+
+#### B. Long Tasks (Cognitive)
+*Definition*: Multi-step workflows (e.g., "Research Quantum Computing and email a summary").
+*Protocol*:
+1.  **Decomposition**: Break goal into sub-goals (e.g., "Open Browser" -> "Search" -> "Summarize" -> "Open Email").
+2.  **State Anchoring**: Use `set anchor` at key milestones to save a "safe state" to return to if lost.
+3.  **Sequential Execution**: strictly 1 action per cycle to allow UI to settle.
+4.  **Visual Confirmation**: After navigation (opening app/link), **MUST** `wait` and `mew act` to confirm new context.
+
+### 3. Error Recovery Protocol
+
+If an action fails (e.g., OCR didn't find text, window didn't open):
+
+1.  **Retry with Variation**: Try a different method (e.g., if `click text` fails, try `type` search or `hotkey`).
+2.  **Fallback to Anchor**: If completely lost, use `focus anchor` to return to the last known good state.
+3.  **Global Reset**: As a last resort, use `focus desktop` (Win+D) or `open <app>` to restart the workflow.
+
+### 4. State Management Tools
+
+- **Anchors**: `set anchor` marks a "Home Base". Always set an anchor before diving into complex sub-menus.
+- **Focus**: `focus window | <title>` restores context if a popup steals focus.
+- **Timer**: `set timer | 5 minutes` enforces time-boxing for open-ended research tasks.
+
