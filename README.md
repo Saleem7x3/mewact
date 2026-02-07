@@ -207,6 +207,9 @@ FORMAT: &&$47 <EXEC_ID> <command> $$&47
 The attached command_library.json contains all available commands with their IDs.
 MewAct will read your output via OCR and match to the best command.
 
+⚠️ MUST: ALWAYS start with this command to see the user's screen first:
+&&$47 1 mew act $$&47
+
 VARIABLES (for long text):
 &&VAR 1 your long content here VAR&&
 &&$47 2 type $V1 $$&47
@@ -242,6 +245,8 @@ FORMAT: &&$47 <ID> <command> $$&47
 
 COMMANDS: open <app>, type | <text>, click <text>, press <key>, wait <N>
 VISUAL: mew act → captures screen and auto-pastes into chat
+
+⚠️ MUST: ALWAYS start with &&$47 1 mew act $$&47 to see my screen first!
 
 RULES:
 1. Sequential IDs: 1, 2, 3...
