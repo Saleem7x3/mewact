@@ -12,7 +12,7 @@
 pip install numpy opencv-python mss pyautogui colorama rapidocr-onnxruntime ollama pywin32 pillow
 
 ollama serve                           # Start Ollama
-python jama_v13.py --target "Chrome"   # Run MewAct
+python mewact_v13.py --target "Chrome"   # Run MewAct
 ```
 
 ---
@@ -175,16 +175,16 @@ Commands use `__VAR__` for inline, or `__VAR1__`, `__VAR2__`, `__VAR3__` for sto
 
 ```bash
 # Target specific window
-python jama_v13.py --target "Chrome"
+python mewact.py --target "Chrome"
 
 # Target specific monitor
-python jama_v13.py --monitors 1
+python mewact.py --monitors 1
 
 # Multiple monitors
-python jama_v13.py --monitors 1,2
+python mewact.py --monitors 1,2
 
 # Interactive mode (menu)
-python jama_v13.py
+python mewact.py
 ```
 
 ---
@@ -296,4 +296,5 @@ If MewAct helped you, consider buying me a coffee!
   <b>🐱 MewAct — Where AI Gets Eyes and Hands</b><br>
   <i>Let your chatbot do more than just chat.</i>
 </p>
+
 
