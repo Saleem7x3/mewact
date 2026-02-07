@@ -28,6 +28,7 @@ init(autoreset=True)
 
 # --- CONFIGURATION ---
 MODEL_NAME = "gemma3:4b-cloud" 
+OCR_ENGINE = "rapidocr"  # "rapidocr", "easyocr", or "paddleocr"
 TARGET_WINDOW_TITLE = ""  # Focus on specific window (e.g., "Chrome")
 TARGET_MONITORS = []      # List of monitor indices (1-based). Empty = all. E.g., [1] or [1, 2]
 LIBRARY_FILE = "command_library.json"
@@ -255,8 +256,33 @@ class WindowCapture:
 
 class PerceptionEngine:
     def __init__(self):
-        from rapidocr_onnxruntime import RapidOCR
-        self.ocr = RapidOCR(det_use_gpu=False, cls_use_gpu=False, rec_use_gpu=False, intra_op_num_threads=4)
+        self.ocr_engine = OCR_ENGINE.lower()
+        print(f"{Fore.CYAN}[*] Initialization: {self.ocr_engine.upper()} Engine")
+        
+        # --- ENGINE INITIALIZATION ---
+        if self.ocr_engine == "easyocr":
+            try:
+                import easyocr
+                # This will download models on first run
+                self.ocr = easyocr.Reader(['en'], gpu=False)
+            except ImportError:
+                print(f"{Fore.YELLOW}[!] EasyOCR not installed. Falling back to RapidOCR.")
+                self.ocr_engine = "rapidocr"
+        
+        elif self.ocr_engine == "paddleocr":
+            try:
+                from paddleocr import PaddleOCR
+                # use_angle_cls=True for better text orientation detection
+                self.ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+            except ImportError:
+                print(f"{Fore.YELLOW}[!] PaddleOCR not installed. Falling back to RapidOCR.")
+                self.ocr_engine = "rapidocr"
+        
+        # Default / Fallback
+        if self.ocr_engine == "rapidocr":
+            from rapidocr_onnxruntime import RapidOCR
+            self.ocr = RapidOCR(det_use_gpu=False, cls_use_gpu=False, rec_use_gpu=False, intra_op_num_threads=4)
+            
         self.win_cap = WindowCapture()
         self.last_image = None  # Store last captured image for clipboard
         with mss.mss() as sct:
@@ -291,15 +317,47 @@ class PerceptionEngine:
                     try:
                         img = np.array(sct.grab(region))
                         self.last_image = img.copy()  # Store for mew act command
-                        gray = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
-                        result, _ = self.ocr(gray)
-                        if result:
-                            for item in result:
-                                box, text, _ = item
-                                all_txt_parts.append(text)
-                                cx = int(((box[0][0] + box[2][0]) / 2)) + region["left"]
-                                cy = int(((box[0][1] + box[2][1]) / 2)) + region["top"]
+                        
+                        # --- OCR PROCESSING ---
+                        if self.ocr_engine == "easyocr":
+                            # EasyOCR prefers RGB
+                            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+                            results = self.ocr.readtext(img_rgb)
+                            for (bbox, text, prob) in results:
+                                if prob < 0.2: continue
+                                # bbox format: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                                cx = int((bbox[0][0] + bbox[2][0]) / 2) + region["left"]
+                                cy = int((bbox[0][1] + bbox[2][1]) / 2) + region["top"]
                                 all_ui_data.append({"text": text, "x": cx, "y": cy})
+                                all_txt_parts.append(text)
+                                
+                        elif self.ocr_engine == "paddleocr":
+                            # PaddleOCR expects image path or numpy array (RGB)
+                            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+                            result = self.ocr.ocr(img_rgb, cls=True)
+                            # Result structure: [ [ [ [x1,y1], [x2,y2]... ], (text, confidence) ], ... ]
+                            if result and result[0]:
+                                for line in result[0]:
+                                    box = line[0]
+                                    text, score = line[1]
+                                    if score < 0.5: continue
+                                    
+                                    cx = int((box[0][0] + box[2][0]) / 2) + region["left"]
+                                    cy = int((box[0][1] + box[2][1]) / 2) + region["top"]
+                                    all_ui_data.append({"text": text, "x": cx, "y": cy})
+                                    all_txt_parts.append(text)
+                                    
+                        else:
+                            # RapidOCR (Default)
+                            gray = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
+                            result, _ = self.ocr(gray)
+                            if result:
+                                for item in result:
+                                    box, text, _ = item
+                                    all_txt_parts.append(text)
+                                    cx = int(((box[0][0] + box[2][0]) / 2)) + region["left"]
+                                    cy = int(((box[0][1] + box[2][1]) / 2)) + region["top"]
+                                    all_ui_data.append({"text": text, "x": cx, "y": cy})
                     except: continue
                 return all_ui_data, " ".join(all_txt_parts)
         except: return [], ""
@@ -709,7 +767,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", type=str, help="Target window title")
     parser.add_argument("--monitors", type=str, help="Monitor indices (comma-separated, e.g., '1' or '1,2')")
+    parser.add_argument("--ocr", choices=["rapidocr", "easyocr", "paddleocr"], help="Choose OCR engine")
     args = parser.parse_args()
+    
+    if args.ocr:
+        OCR_ENGINE = args.ocr
+        print(f"{Fore.CYAN}[*] CLI OCR Override: {OCR_ENGINE}")
 
     if args.target:
         TARGET_WINDOW_TITLE = args.target
