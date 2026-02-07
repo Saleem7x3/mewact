@@ -301,6 +301,33 @@ MewAct executes commands visible on screen. Only use with AI you trust. Commands
 
 ---
 
+### 🖥️ Multi-Monitor Setup
+Target specific screens in a multi-monitor environment (e.g., utilize only 2 screens out of 5):
+
+```bash
+# Capture only Monitor 2 and Monitor 4
+python mew.py --monitors 2,4
+```
+
+Combine with scan modes:
+```bash
+# Scan only windows present on Monitor 2 (ignoring other screens)
+python mew.py --monitors 2 --scan-mode window
+```
+```bash
+# Scan Monitor 3 full-screen and Monitor 5 window-by-window
+python mew.py --monitors 3,5 --monitor-strategy window
+```
+
+### ⚡ Performance Optimization
+Toggle Adaptive OCR to save resources on low-end machines:
+```bash
+python mew.py --power-saver
+```
+This splits large windows into strips to reduce memory spikes.
+
+---
+
 ## 💖 Support Me
 
 If MewAct helped you, consider buying me a coffee!

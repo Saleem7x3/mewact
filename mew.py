@@ -45,7 +45,18 @@ TRIGGER_PATTERN = r"(\d+)&&\$47\s*(.*?)\s*\1\$&47"
 VAR_PATTERN = r"&&VAR\s*(\d+)\s+(.*?)\s*VAR&&"
 
 LOOP_DELAY = 0.2
-DEBUG_OCR = False 
+DEBUG_OCR = False
+OCR_USE_GPU = True  # Set to True to use GPU for OCR (EasyOCR/PaddleOCR only) 
+
+# Adaptive OCR Configuration
+OCR_ADAPTIVE_MODE = False # Default to Full Screen (Performance). Set True via --power-saver
+OCR_STRIP_THRESHOLD = 0.53  # Windows occupying >53% of screen use strip mode
+OCR_STRIP_COUNT = 3         # Number of horizontal strips to split large windows into 
+OCR_STRIP_OVERLAP = 30      # Pixels of overlap between strips to prevent cutting text lines 
+
+# Scan Mode Configuration
+OCR_SCAN_MODE = "monitor"   # "monitor" (default) or "window"
+OCR_MONITOR_STRATEGY = "full" # "full" (default) or "window" (iterates windows on monitor) 
 
 # --- AUTO-ROLLBACK CONFIG ---
 # When enabled, automatically focuses back to chat window after each command
@@ -253,6 +264,35 @@ class WindowCapture:
             return {"top": rect.top, "left": rect.left, "width": w, "height": h}
         return None
 
+    
+    def get_all_window_rects(self):
+        """Return list of rects for all visible application windows."""
+        window_rects = []
+        def callback(hwnd, extra):
+            if self.user32.IsWindowVisible(hwnd):
+                length = self.user32.GetWindowTextLengthW(hwnd)
+                if length > 0:
+                    # Get title to filter Program Manager/System stuff
+                    buff = ctypes.create_unicode_buffer(length + 1)
+                    self.user32.GetWindowTextW(hwnd, buff, length + 1)
+                    title = buff.value
+                    
+                    if title and title != "Program Manager":
+                        rect = wintypes.RECT()
+                        self.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                        w = rect.right - rect.left
+                        h = rect.bottom - rect.top
+                        
+                        # Filter tiny windows (likely tooltips/hidden)
+                        if w > 20 and h > 20:
+                             window_rects.append({"top": rect.top, "left": rect.left, "width": w, "height": h, "title": title})
+            return 1
+        PROT_ENUM = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
+        self.user32.EnumWindows(PROT_ENUM(callback), 0)
+        # Sort by Z-order? EnumWindows usually enumerates in Z-order (top first).
+        # We might want to capture top-down or bottom-up. Standard iteration is fine.
+        return window_rects
+
     def list_windows(self):
         window_list = []
         def callback(hwnd, extra):
@@ -272,14 +312,14 @@ class WindowCapture:
 class PerceptionEngine:
     def __init__(self):
         self.ocr_engine = OCR_ENGINE.lower()
-        print(f"{Fore.CYAN}[*] Initialization: {self.ocr_engine.upper()} Engine")
+        gpu_status = "GPU" if OCR_USE_GPU else "CPU"
+        print(f"{Fore.CYAN}[*] Initialization: {self.ocr_engine.upper()} Engine ({gpu_status})")
         
         # --- ENGINE INITIALIZATION ---
         if self.ocr_engine == "easyocr":
             try:
                 import easyocr
-                # This will download models on first run
-                self.ocr = easyocr.Reader(['en'], gpu=False)
+                self.ocr = easyocr.Reader(['en'], gpu=OCR_USE_GPU)
             except ImportError:
                 print(f"{Fore.YELLOW}[!] EasyOCR not installed. Falling back to RapidOCR.")
                 self.ocr_engine = "rapidocr"
@@ -287,8 +327,7 @@ class PerceptionEngine:
         elif self.ocr_engine == "paddleocr":
             try:
                 from paddleocr import PaddleOCR
-                # use_angle_cls=True for better text orientation detection
-                self.ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+                self.ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False, use_gpu=OCR_USE_GPU)
             except ImportError:
                 print(f"{Fore.YELLOW}[!] PaddleOCR not installed. Falling back to RapidOCR.")
                 self.ocr_engine = "rapidocr"
@@ -296,12 +335,109 @@ class PerceptionEngine:
         # Default / Fallback
         if self.ocr_engine == "rapidocr":
             from rapidocr_onnxruntime import RapidOCR
-            self.ocr = RapidOCR(det_use_gpu=False, cls_use_gpu=False, rec_use_gpu=False, intra_op_num_threads=4)
+            self.ocr = RapidOCR(det_use_gpu=OCR_USE_GPU, cls_use_gpu=OCR_USE_GPU, rec_use_gpu=OCR_USE_GPU, intra_op_num_threads=4)
             
         self.win_cap = WindowCapture()
-        self.last_image = None  # Store last captured image for clipboard
+        self.last_image = None  # DEPRECATED: Only used if we do full capture loop
+        self.current_capture_regions = [] # Store regions for mew act command
         with mss.mss() as sct:
             self.monitors = sct.monitors[1:] if len(sct.monitors) > 2 else [sct.monitors[1]]
+
+    def _get_capture_regions(self, sct):
+        # 1. Target Window Override (Highest Priority)
+        if TARGET_WINDOW_TITLE:
+            rect = self.win_cap.get_window_rect(TARGET_WINDOW_TITLE)
+            if rect: return [rect]
+            else:
+                if DEBUG_OCR: print(f"{Fore.RED}[!] Target window '{TARGET_WINDOW_TITLE}' not found.")
+                return []
+        
+        # 2. Window Scan Logic
+        # Active if mode="window" OR (mode="monitor" AND strategy="window")
+        use_window_logic = (OCR_SCAN_MODE == "window") or (OCR_SCAN_MODE == "monitor" and OCR_MONITOR_STRATEGY == "window")
+        
+        if use_window_logic:
+            # Get all visible windows
+            all_windows = self.win_cap.get_all_window_rects()
+            
+            # Determine relevant monitors (if filtered)
+            target_indices = TARGET_MONITORS if TARGET_MONITORS else range(1, len(sct.monitors))
+            valid_monitors = [sct.monitors[i] for i in target_indices if i < len(sct.monitors)]
+            
+            if not valid_monitors: return []
+            
+            filtered_windows = []
+            for win in all_windows:
+                # Check if window center is inside any valid monitor
+                cx = win['left'] + win['width'] // 2
+                cy = win['top'] + win['height'] // 2
+                
+                is_valid = False
+                for mon in valid_monitors:
+                     if (mon['left'] <= cx < mon['left'] + mon['width'] and 
+                         mon['top'] <= cy < mon['top'] + mon['height']):
+                         is_valid = True
+                         break
+                
+                if is_valid:
+                    filtered_windows.append(win)
+            
+            # Sort windows by coordinate (Top-Left -> Bottom-Right) for consistent reading order
+            # EnumWindows is Z-order, but for OCR reading, spatial order might be better?
+            # User didn't specify, sticking to Z-order (EnumWindows default) is fine.
+            return filtered_windows
+
+        # 3. Monitor Scan Logic (Full Screen) - Default
+        target_indices = TARGET_MONITORS if TARGET_MONITORS else range(1, len(sct.monitors))
+        regions = [sct.monitors[i] for i in target_indices if i < len(sct.monitors)]
+        
+        if not regions:
+             return [sct.monitors[1]] if len(sct.monitors) > 1 else []
+             
+        return regions
+
+    def _ocr_image(self, img, region_offset_x, region_offset_y):
+        """Helper to run OCR on an image and return adjusted coordinates."""
+        ui_data = []
+        txt_parts = []
+        try:
+            if self.ocr_engine == "easyocr":
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+                results = self.ocr.readtext(img_rgb)
+                for (bbox, text, prob) in results:
+                    if prob < 0.2: continue
+                    cx = int((bbox[0][0] + bbox[2][0]) / 2) + region_offset_x
+                    cy = int((bbox[0][1] + bbox[2][1]) / 2) + region_offset_y
+                    ui_data.append({"text": text, "x": cx, "y": cy})
+                    txt_parts.append(text)
+                    
+            elif self.ocr_engine == "paddleocr":
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+                result = self.ocr.ocr(img_rgb, cls=True)
+                if result and result[0]:
+                    for line in result[0]:
+                        box = line[0]
+                        text, score = line[1]
+                        if score < 0.5: continue
+                        cx = int((box[0][0] + box[2][0]) / 2) + region_offset_x
+                        cy = int((box[0][1] + box[2][1]) / 2) + region_offset_y
+                        ui_data.append({"text": text, "x": cx, "y": cy})
+                        txt_parts.append(text)
+                        
+            else: # RapidOCR
+                result, _ = self.ocr(img)
+                if result:
+                    for line in result:
+                        box = line[0]
+                        text, score = line[1], line[2]
+                        if score < 0.4: continue
+                        cx = int((box[0][0] + box[2][0]) / 2) + region_offset_x
+                        cy = int((box[0][1] + box[2][1]) / 2) + region_offset_y
+                        ui_data.append({"text": text, "x": cx, "y": cy})
+                        txt_parts.append(text)
+        except Exception as e:
+            if DEBUG_OCR: print(f"OCR Error: {e}")
+        return ui_data, txt_parts
 
     def capture_and_scan(self):
         time.sleep(0.1) 
@@ -309,72 +445,57 @@ class PerceptionEngine:
             with mss.mss() as sct:
                 all_ui_data = [] 
                 all_txt_parts = []
-                capture_regions = []
                 
-                if TARGET_WINDOW_TITLE:
-                    rect = self.win_cap.get_window_rect(TARGET_WINDOW_TITLE)
-                    if rect: capture_regions = [rect]
-                    else:
-                        if DEBUG_OCR: print(f"{Fore.RED}[!] Target window '{TARGET_WINDOW_TITLE}' not found.")
-                        return [], "" 
-                else:
-                    # Monitor selection: use TARGET_MONITORS if specified, else all
-                    if TARGET_MONITORS:
-                        all_mons = sct.monitors  # Index 0 is virtual, 1+ are real monitors
-                        capture_regions = [all_mons[i] for i in TARGET_MONITORS if i < len(all_mons)]
-                        if not capture_regions:
-                            print(f"{Fore.YELLOW}[!] Invalid monitor indices: {TARGET_MONITORS}. Using all.")
-                            capture_regions = sct.monitors[1:] if len(sct.monitors) > 2 else [sct.monitors[1]]
-                    else:
-                        capture_regions = sct.monitors[1:] if len(sct.monitors) > 2 else [sct.monitors[1]]
+                self.current_capture_regions = self._get_capture_regions(sct)
+                if not self.current_capture_regions: return [], ""
 
-                for i, region in enumerate(capture_regions):
-                    try:
-                        img = np.array(sct.grab(region))
-                        self.last_image = img.copy()  # Store for mew act command
-                        
-                        # --- OCR PROCESSING ---
-                        if self.ocr_engine == "easyocr":
-                            # EasyOCR prefers RGB
-                            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
-                            results = self.ocr.readtext(img_rgb)
-                            for (bbox, text, prob) in results:
-                                if prob < 0.2: continue
-                                # bbox format: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-                                cx = int((bbox[0][0] + bbox[2][0]) / 2) + region["left"]
-                                cy = int((bbox[0][1] + bbox[2][1]) / 2) + region["top"]
-                                all_ui_data.append({"text": text, "x": cx, "y": cy})
-                                all_txt_parts.append(text)
+                # Assume screen 0 for coverage calculation (simplification)
+                screen_area = sct.monitors[0]['width'] * sct.monitors[0]['height']
+                
+                # Disable splitting for window-based modes (User request: "without cutting")
+                is_window_mode = (OCR_SCAN_MODE == "window") or (OCR_SCAN_MODE == "monitor" and OCR_MONITOR_STRATEGY == "window")
+                allow_splitting = OCR_ADAPTIVE_MODE and not is_window_mode
+
+                for region in self.current_capture_regions:
+                    region_area = region['width'] * region['height']
+                    coverage = region_area / screen_area
+                    
+                    # ADAPTIVE OCR STRATEGY (Power Saver Mode - Full Monitor Only)
+                    if allow_splitting and coverage > OCR_STRIP_THRESHOLD:
+                        # Large window: Split into strips to reduce peak memory/CPU load
+                        # print(f"[DEBUG] Adaptive OCR: Strip mode for large window ({coverage:.2f} coverage)")
+                        strip_height = region['height'] // OCR_STRIP_COUNT
+                        for i in range(OCR_STRIP_COUNT):
+                            # Calculate base dimensions
+                            base_top = region['top'] + (i * strip_height)
+                            base_height = strip_height
+                            # Adjust height for last strip to cover remainder
+                            if i == OCR_STRIP_COUNT - 1:
+                                base_height = region['height'] - (i * strip_height)
+                            
+                            # Add overlap: Extend strip DOWNWARDS to capture text on the cut line
+                            # (Except for the very last strip which is bounded by window bottom)
+                            final_height = base_height
+                            if i < OCR_STRIP_COUNT - 1:
+                                final_height += OCR_STRIP_OVERLAP
                                 
-                        elif self.ocr_engine == "paddleocr":
-                            # PaddleOCR expects image path or numpy array (RGB)
-                            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
-                            result = self.ocr.ocr(img_rgb, cls=True)
-                            # Result structure: [ [ [ [x1,y1], [x2,y2]... ], (text, confidence) ], ... ]
-                            if result and result[0]:
-                                for line in result[0]:
-                                    box = line[0]
-                                    text, score = line[1]
-                                    if score < 0.5: continue
-                                    
-                                    cx = int((box[0][0] + box[2][0]) / 2) + region["left"]
-                                    cy = int((box[0][1] + box[2][1]) / 2) + region["top"]
-                                    all_ui_data.append({"text": text, "x": cx, "y": cy})
-                                    all_txt_parts.append(text)
-                                    
-                        else:
-                            # RapidOCR (Default)
-                            gray = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
-                            result, _ = self.ocr(gray)
-                            if result:
-                                for item in result:
-                                    box, text, _ = item
-                                    all_txt_parts.append(text)
-                                    cx = int(((box[0][0] + box[2][0]) / 2)) + region["left"]
-                                    cy = int(((box[0][1] + box[2][1]) / 2)) + region["top"]
-                                    all_ui_data.append({"text": text, "x": cx, "y": cy})
-                        all_ui_data.append({"text": text, "x": cx, "y": cy})
-                    except: continue
+                            strip_rect = {
+                                'left': region['left'],
+                                'top': base_top,
+                                'width': region['width'],
+                                'height': final_height
+                            }
+                            img = np.array(sct.grab(strip_rect))
+                            s_data, s_txt = self._ocr_image(img, strip_rect['left'], strip_rect['top'])
+                            all_ui_data.extend(s_data)
+                            all_txt_parts.extend(s_txt)
+                    else:
+                        # Small window: Full capture
+                        # print(f"[DEBUG] Adaptive OCR: Full mode for small window ({coverage:.2f} coverage)")
+                        img = np.array(sct.grab(region))
+                        s_data, s_txt = self._ocr_image(img, region['left'], region['top'])
+                        all_ui_data.extend(s_data)
+                        all_txt_parts.extend(s_txt)
                 
                 full_text = " ".join(all_txt_parts)
                 # --- NORMALIZE "STYLISH" FONTS ---
@@ -382,19 +503,40 @@ class PerceptionEngine:
                 full_text = unicodedata.normalize('NFKD', full_text).encode('ascii', 'ignore').decode('utf-8')
                 
                 return all_ui_data, full_text
-        except: return [], ""
+        except Exception as e:
+            if DEBUG_OCR: print(f"Capture Error: {e}")
+            return [], ""
 
     def copy_last_image_to_clipboard(self) -> bool:
-        """Copy the last captured OCR image to Windows clipboard."""
-        if self.last_image is None:
-            print(f"{Fore.RED}[!] No image captured yet.")
-            return False
+        """Capture FRESH full-screen image (or relevant context) and copy to clipboard."""
         try:
+            with mss.mss() as sct:
+                # Determine best region to capture for context
+                # Prioritize explicit targets, otherwise default to Primary Monitor
+                region = None
+                
+                if TARGET_WINDOW_TITLE:
+                    rect = self.win_cap.get_window_rect(TARGET_WINDOW_TITLE)
+                    if rect: region = rect
+                elif TARGET_MONITORS:
+                    # Capture the first targeted monitor
+                    idx = TARGET_MONITORS[0]
+                    if idx < len(sct.monitors):
+                        region = sct.monitors[idx]
+                
+                # Fallback: Capture Primary Monitor (sct.monitors[1])
+                # Note: sct.monitors[0] is 'All Monitors Combined' - good for context but maybe too big?
+                # Sticking to Primary Monitor for consistency.
+                if not region:
+                    region = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
+                
+                img = np.array(sct.grab(region))
+            
             from PIL import Image
             import win32clipboard
             
             # Convert BGRA to RGB
-            img_rgb = cv2.cvtColor(self.last_image, cv2.COLOR_BGRA2RGB)
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
             pil_img = Image.fromarray(img_rgb)
             
             # Convert to BMP format for clipboard
@@ -409,7 +551,7 @@ class PerceptionEngine:
             win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
             win32clipboard.CloseClipboard()
             
-            print(f"{Fore.GREEN}[+] Image copied to clipboard! You can paste it now.")
+            print(f"{Fore.GREEN}[+] Fresh full-screen image copied to clipboard!")
             return True
         except ImportError as e:
             print(f"{Fore.RED}[!] Missing module: {e.name}. Install with: pip install pywin32 pillow")
@@ -974,26 +1116,45 @@ if __name__ == "__main__":
     parser.add_argument("--target", type=str, help="Target window title")
     parser.add_argument("--monitors", type=str, help="Monitor indices (comma-separated, e.g., '1' or '1,2')")
     parser.add_argument("--ocr", choices=["rapidocr", "easyocr", "paddleocr"], help="Choose OCR engine")
+    parser.add_argument("--gpu", action="store_true", help="Use GPU for OCR (EasyOCR/PaddleOCR only)")
     parser.add_argument("--auto-rollback", type=str, metavar="CHAT", 
                         help="Auto-focus back to chat window after commands. Values: gemini, chatgpt, claude, tab, window:<title>")
+    parser.add_argument("--power-saver", action="store_true", help="Enable Adaptive/Scattered OCR mode for low-end PCs")
+    
+    parser.add_argument("--scan-mode", choices=["monitor", "window"], default="monitor", help="Scan Mode: monitor (default) or window (iterates all windows)")
+    parser.add_argument("--monitor-strategy", choices=["full", "window"], default="full", help="Monitor Strategy: full (default) or window (iterates windows on monitor)")
+    
     args = parser.parse_args()
     
+    # Use globals() dict to modify module-level variables (avoids global declaration issues)
     if args.ocr:
-        OCR_ENGINE = args.ocr
-        print(f"{Fore.CYAN}[*] CLI OCR Override: {OCR_ENGINE}")
+        globals()['OCR_ENGINE'] = args.ocr
+        print(f"{Fore.CYAN}[*] CLI OCR Override: {args.ocr}")
+    
+    if args.gpu:
+        globals()['OCR_USE_GPU'] = True
+        print(f"{Fore.CYAN}[*] GPU Mode: Enabled for OCR")
+        
+    if args.power_saver:
+        globals()['OCR_ADAPTIVE_MODE'] = True
+        print(f"{Fore.CYAN}[*] Power Saver Mode: Enabled (Adaptive/Scattered OCR)")
 
+    # Set scan modes from CLI
+    globals()['OCR_SCAN_MODE'] = args.scan_mode
+    globals()['OCR_MONITOR_STRATEGY'] = args.monitor_strategy
+    
     if args.target:
-        TARGET_WINDOW_TITLE = args.target
-        print(f"{Fore.CYAN}[*] CLI Target: '{TARGET_WINDOW_TITLE}'")
+        globals()['TARGET_WINDOW_TITLE'] = args.target
+        print(f"{Fore.CYAN}[*] CLI Target: '{args.target}'")
     
     if args.monitors:
-        TARGET_MONITORS = [int(m.strip()) for m in args.monitors.split(',') if m.strip().isdigit()]
-        print(f"{Fore.CYAN}[*] CLI Monitors: {TARGET_MONITORS}")
+        globals()['TARGET_MONITORS'] = [int(m.strip()) for m in args.monitors.split(',') if m.strip().isdigit()]
+        print(f"{Fore.CYAN}[*] CLI Monitors: {globals()['TARGET_MONITORS']}")
     
     if args.auto_rollback:
-        AUTO_ROLLBACK_ENABLED = True
-        AUTO_ROLLBACK_CHAT = args.auto_rollback.lower()
-        print(f"{Fore.CYAN}[*] AUTO-ROLLBACK ENABLED: Will focus back to '{AUTO_ROLLBACK_CHAT}' after each command")
+        globals()['AUTO_ROLLBACK_ENABLED'] = True
+        globals()['AUTO_ROLLBACK_CHAT'] = args.auto_rollback.lower()
+        print(f"{Fore.CYAN}[*] AUTO-ROLLBACK ENABLED: Will focus back to '{args.auto_rollback.lower()}' after each command")
     
     if not args.target and not args.monitors:
         print(f"{Fore.CYAN}--- JAM A.I. ID-Selector Mode ---")
@@ -1015,8 +1176,8 @@ if __name__ == "__main__":
                 try:
                     sel = int(input(f"Select ID: ").strip())
                     if 1 <= sel <= len(valid_wins):
-                        TARGET_WINDOW_TITLE = valid_wins[sel-1]
-                        print(f"{Fore.CYAN}[*] Targeted: '{TARGET_WINDOW_TITLE}'")
+                        globals()['TARGET_WINDOW_TITLE'] = valid_wins[sel-1]
+                        print(f"{Fore.CYAN}[*] Targeted: '{valid_wins[sel-1]}'")
                 except: pass
         
         elif mode == "3":
@@ -1026,8 +1187,8 @@ if __name__ == "__main__":
                     print(f"  [{i}] {mon['width']}x{mon['height']} at ({mon['left']}, {mon['top']})")
                 try:
                     sel = input("Enter monitor(s) (comma-separated, e.g., '1' or '1,2'): ").strip()
-                    TARGET_MONITORS = [int(m.strip()) for m in sel.split(',') if m.strip().isdigit()]
-                    print(f"{Fore.CYAN}[*] Targeted monitors: {TARGET_MONITORS}")
+                    globals()['TARGET_MONITORS'] = [int(m.strip()) for m in sel.split(',') if m.strip().isdigit()]
+                    print(f"{Fore.CYAN}[*] Targeted monitors: {globals()['TARGET_MONITORS']}")
                 except: pass
 
     lib_mgr = LibraryManager() 
