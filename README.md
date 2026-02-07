@@ -260,9 +260,35 @@ VARIABLES:
 
 ---
 
+## 💡 Best Practices & Troubleshooting
+
+### 🚀 Optimizing AI Performance
+- **Wait Commands**: Always include `wait 1` or `wait 2` after opening apps or clicking buttons to allow UI loading.
+- **Variable Usage**: Use `&&VAR` for any text longer than 50 characters to keep the trigger processing fast.
+- **Sequential IDs**: Ensure the `EXEC_ID` always increments. If you repeat an ID, MewAct will ignore it (to prevent infinite loops).
+
+### 🔧 Common Fixes
+- **DPI / Scaling Issues**: If clicks are landing in the wrong spot, ensure your Windows Display Scaling is set to 100% or that you've run the script with Administrator privileges.
+- **OCR Accuracy**: MewAct works best on dark mode or high-contrast themes. Avoid busy/transparent backgrounds.
+- **Ollama Timeout**: If you see "LLM call failed", ensure `ollama serve` is running and the model (`gemma3:4b-cloud` by default) is downloaded.
+- **Trigger Not Found**: The trigger must be visible on screen. If ChatGPT is hidden behind another window, MewAct can't see the commands!
+
+---
+
 ## ⚠️ Security
 
 MewAct executes commands visible on screen. Only use with AI you trust. Commands run with your user permissions.
+
+---
+
+## 💖 Support Me
+
+If MewAct helped you, consider buying me a coffee!
+
+<p align="center">
+  <img src="https://drive.google.com/file/d/1b8JFHnbcMP9r1GvBFUQTxKd7sBJxzSKz/view?usp=sharing" alt="UPI QR Code" width="250"><br>
+  <b>UPI ID:</b> <code>arshiyatamanna07@okhdfcbank</code>
+</p>
 
 ---
 
