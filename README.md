@@ -17,7 +17,7 @@ python jama_v13.py --target "Chrome"   # Run MewAct
 
 ---
 
-## 🎭 Real Examples with Gemini
+## 🎭 Real Examples
 
 ### Example 1: "Help me write an email"
 
@@ -296,3 +296,4 @@ If MewAct helped you, consider buying me a coffee!
   <b>🐱 MewAct — Where AI Gets Eyes and Hands</b><br>
   <i>Let your chatbot do more than just chat.</i>
 </p>
+
