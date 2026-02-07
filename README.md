@@ -189,6 +189,7 @@ When you navigate away (open link, switch apps), you MUST return to this chat:
 - If chat is in SEPARATE WINDOW: use "focus gemini" or "focus chatgpt"
 - If chat shares browser with OTHER TABS: use "goto gemini tab" (searches and switches)
 - If only 2 TABS: use "switch tab" (Ctrl+Tab)
+- If using external apps: use "focus window | title" or "focus anchor"
 After returning, ALWAYS use "mew act" to paste your findings.
 
 TAB DETECTION: Look at the first screenshot. Count browser tabs visible at top.
