@@ -258,6 +258,17 @@ MewAct comes with a **massive command library** containing over 170+ actions (de
 | `open youtube` | Open `https://youtube.com` |
 | `open url \| <url>` | Open custom URL |
 | `open file dialog` | Open the "Open File" system dialog |
+
+### Interactive Control (Session 3)
+
+| Command | Description |
+|---------|-------------|
+| `focus window | <title>` | Switch focus to a window matching the title |
+| `set anchor` | Mark current window and mouse position |
+| `focus anchor` | Return to marked window and click marked position |
+| `set timer | <duration>` | Open Google Timer with specified duration |
+| `snap window [left/right/up]` | Snap current window to screen edge |
+| `open whatsapp` | Open WhatsApp Web (ID 220) |
 | `open file \| <path>` | Open a specific file directly |
 
 ### Shell Commands

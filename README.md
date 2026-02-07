@@ -239,7 +239,7 @@ You can control my PC with MewAct.
 
 FORMAT: <ID>&&$47 <command> <ID>$&47
 
-COMMANDS: open <app>, type | <text>, click <text>, press <key>, wait <N>
+COMMANDS: open <app>, type | <text>, click <text>, press <key>, wait <N>, set timer | <time>, set anchor, focus <window>
 VISUAL: mew act → captures screen and auto-pastes into chat
 FOCUS: goto chatgpt tab OR focus chatgpt → return to this chat
 
@@ -281,6 +281,10 @@ MewAct comes with a **massive command library** (defined in `command_library.jso
 | `press <key>` | Simulate a key press (e.g. `press enter`, `press f11`) |
 | `wait <N>` | Pause execution for N seconds |
 | `mew act` | Capture screen & auto-paste to chat |
+| `set timer | <duration>` | Set Google timer (e.g. `5 minutes`) |
+| `set anchor` / `focus anchor` | Mark and return to window/position |
+| `focus window | <title>` | Switch to specific window |
+| `snap window [left/right]` | Split screen management |
 
 ### Execution Types
 
