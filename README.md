@@ -307,6 +307,17 @@ MewAct comes with a **massive command library** (defined in `command_library.jso
 
 ---
 
+### Batch Execution (Notepad Notedown)
+
+Use `notepad notedown` (ID 402) to verify complex sequences:
+
+```bash
+402&&$47 notepad notedown | open notepad ;; type | hello world ;; wait 2 402$&47
+```
+
+- **Separator**: Use `;;` to separate commands (allows `|` usage inside commands).
+- **Fallback**: Can use `|` if commands are simple (e.g., `open calc | wait 1`).
+
 ## ⚠️ Security
 
 MewAct executes commands visible on screen. Only use with AI you trust. Commands run with your user permissions.
