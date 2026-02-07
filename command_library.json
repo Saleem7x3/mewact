@@ -80,13 +80,13 @@
         "mew act": {
             "id": 107,
             "type": "python",
-            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.3)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(0.5)\npyautogui.press('enter')",
+            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.5)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(2.0)\npyautogui.press('enter')",
             "description": "Copy current screen to clipboard and paste it"
         },
         "mewact": {
             "id": 107,
             "type": "python",
-            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.3)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(0.5)\npyautogui.press('enter')",
+            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.5)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(2.0)\npyautogui.press('enter')",
             "description": "Alias for mew act"
         },
         "focus chat": {

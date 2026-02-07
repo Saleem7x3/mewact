@@ -23,6 +23,7 @@ from ctypes import wintypes
 from colorama import Fore, Style, init
 from typing import Dict, Any, List, Tuple, Optional, Union
 import collections
+import webbrowser
 
 # Initialize Colorama
 init(autoreset=True)
@@ -861,6 +862,27 @@ class PassiveSentinel:
     def start(self):
         print(f"{Fore.YELLOW}[*] Sentinel Active.")
         print(f"{Fore.YELLOW}[*] Listening for triggers...")
+        
+        # --- STARTUP SCAN: Process triggers already visible on screen ---
+        print(f"{Fore.CYAN}[*] Scanning for existing triggers on screen...")
+        ui_data, txt = self.perception.capture_and_scan()
+        if txt:
+            VAR_STORE.parse_from_text(txt)
+            matches = list(re.finditer(TRIGGER_PATTERN, txt))
+            if matches:
+                print(f"{Fore.GREEN}[!] Found {len(matches)} trigger(s) already on screen!")
+                for m in matches:
+                    cid_str, cmd = m.group(1), m.group(2).strip()
+                    print(f"{Fore.GREEN}    >>> Startup Command #{cid_str}: {cmd}")
+                    self.executed_ids.add(cid_str)
+                    code, is_cached = self.planner.plan(cmd)
+                    if code and self.executor.execute(code):
+                        self._execute_auto_rollback(cmd)
+                        if self.planner.library.is_recording:
+                            self.planner.library.record_action(cmd, code)
+                        elif not is_cached:
+                            self.planner.library.save_entry(cmd, code)
+        print(f"{Fore.YELLOW}[*] Startup scan complete. Now monitoring for new triggers...")
         
         while True:
             try:
