@@ -1,23 +1,28 @@
-# 🐱 MewAct
+# MewAct
 
-**Give Any AI Chatbot Eyes and Hands**
+**AI Chatbot Desktop Automation Bridge**
 
-> 🔮 **The Magic**: Ask Claude or ChatGPT to edit a document. ChatGPT outputs commands → MewAct reads them via OCR → Actions happen on your screen → ChatGPT sees the result and continues.
+> MewAct enables AI chatbots (Claude, ChatGPT, Gemini) to control your PC by converting text commands into actions. It uses OCR to see the screen and a local LLM to execute commands, creating a feedback loop between the cloud AI and your desktop.
 
 ---
 
-## ⚡ 30-Second Setup
+## Installation
 
 ```bash
 pip install numpy opencv-python mss pyautogui colorama rapidocr-onnxruntime ollama pywin32 pillow
 
+# Optional: For better OCR accuracy (slower)
+pip install easyocr
+# OR for highest accuracy (heavy)
+pip install paddlepaddle paddleocr
+
 ollama serve                           # Start Ollama
-python mewact_v13.py --target "Chrome"   # Run MewAct
+python jama_v13.py --target "Chrome"   # Run MewAct
 ```
 
 ---
 
-## 🎭 Real Examples
+## Usage Examples
 
 ### Example 1: "Help me write an email"
 
@@ -110,9 +115,57 @@ Let me summarize the results...
 
 ---
 
-## 🔮 The Magic Command: `mew act`
+## 🧠 How It Works: The MewAct Framework
 
-> **This is the secret sauce.** When the AI outputs `mew act`, MewAct grabs the current screen image and **automatically pastes it** into wherever your cursor is (the chat input box). No manual Ctrl+V needed!
+MewAct isn't just a script; it's a **Perception-Cognition-Action** loop that turns any LLM into an agent.
+
+### 1. The Cloud Brain (Claude/Gemini/GPT)
+- **Role:** High-level reasoning, planning, and goal setting.
+- **Input:** User prompt ("Send an email") + Screen Context (via `mew act`).
+- **Output:** A structured trigger command: `&&$47 1 open outlook $$&47`.
+
+### 2. The Local Cortex (MewAct + Ollama)
+This Python script acts as the body, running a continuous feedback loop:
+
+- **👁️ Perception Engine (`PerceptionEngine`)**:
+  - Captures the screen (mss)
+  - Reads text coordinates (OCR: RapidOCR/EasyOCR/PaddleOCR)
+  - Identifies windows and monitors
+
+- **🧠 Cognitive Planner (`CognitivePlanner`)**:
+  - Detects the trigger from the Cloud Brain.
+  - **Smart Filtering:** Extracts keywords from the goal ("open outlook").
+  - **Local LLM Decision:** Uses a small, fast local model (Gemma/Llama via Ollama) to pick the *exact* Command ID from the library that matches the goal.
+  - *Why?* This prevents the Cloud AI from needing to memorize 170+ command IDs perfectly. It just states the intent!
+
+- **⚡ Action Executor (`ActionExecutor`)**:
+  - Executes the Python code associated with the ID.
+  - Handles variable injection (`$V1` → `__VAR1__`).
+  - Performs the physical mouse clicks/keystrokes (PyAutoGUI).
+
+### 3. The Visual Feedback Loop
+- The cycle closes when the Cloud Brain requests `mew act`.
+- MewAct captures the result and **auto-pastes** it back to the chat.
+- The Cloud Brain sees the effect of its action and plans the next step.
+
+---
+
+## Visual Feedback: `mew act`
+
+The `mew act` command triggers a screen capture and automatic paste action. This allows the AI to "see" the result of its previous commands.
+
+```text
+&&$47 1 mew act $$&47
+```
+
+**Workflow:**
+
+1. AI outputs `mew act` command
+2. MewAct captures the screen via OCR
+3. MewAct copies the image and **automatically pastes** (Ctrl+V) it into the chat
+4. The AI analyzes the screenshot and determines the next step
+
+> **Note:** Ensure the cursor is in the chat input box before `mew act` triggers.
 
 ```text
 &&$47 1 mew act $$&47
@@ -127,23 +180,23 @@ Let me summarize the results...
 
 > 💡 **Pro tip:** Click on the chat input box before running MewAct, so the auto-paste lands in the right place.
 
-This creates a **visual feedback loop** — the AI sees what happened, adjusts, and continues until the task is done.
+This creates a closed feedback loop for autonomous operation.
 
 ---
 
-## 🤖 Commands
+## Available Commands
 
-| Command | What it does |
-|---------|--------------|
-| `open <app>` | Launch any application |
-| `type \| <text>` | Type text (short) |
-| `type $V1` | Type variable (long text) |
-| `click <text>` | Click button/link by text |
-| `press <key>` | Press keyboard key |
-| `wait <N>` | Wait N seconds |
-| `mew act` | 📸 Screenshot + auto-paste |
+MewAct provides a streamlined set of commands to control any application:
 
-Check the command library for all the hundreds of commands.
+| Command | Action |
+|---------|--------|
+| `open <app>` | Launch an application (e.g. `open calculator`) |
+| `type \| <text>` | Type short text immediately |
+| `type $V1` | Type long text from a variable |
+| `click <text>` | Click on any text visible on screen |
+| `press <key>` | Simulate a key press (e.g. `press enter`, `press f11`) |
+| `wait <N>` | Pause execution for N seconds |
+| `mew act` | Capture screen & auto-paste to chat |
 
 ### Variables
 
@@ -173,25 +226,25 @@ Commands use `__VAR__` for inline, or `__VAR1__`, `__VAR2__`, `__VAR3__` for sto
 
 ---
 
-## 🎯 Run Options
+## Configuration & CLI
 
 ```bash
 # Target specific window
-python mewact.py --target "Chrome"
+python jama_v13.py --target "Chrome"
 
 # Target specific monitor
-python mewact.py --monitors 1
+python jama_v13.py --monitors 1
 
 # Multiple monitors
-python mewact.py --monitors 1,2
+python jama_v13.py --monitors 1,2
 
 # Interactive mode (menu)
-python mewact.py
+python jama_v13.py
 ```
 
 ---
 
-## 🤖 AI Setup (Choose Your Platform)
+## AI System Prompts
 
 ### Gemini Gems (Recommended - File Upload)
 
@@ -295,9 +348,6 @@ If MewAct helped you, consider buying me a coffee!
 ---
 
 <p align="center">
-  <b>🐱 MewAct — Where AI Gets Eyes and Hands</b><br>
-  <i>Let your chatbot do more than just chat.</i>
+  <b>MewAct — AI Desktop Automation</b><br>
+  <i>Bridge for Cloud AI and Local Execution</i>
 </p>
-
-
-
