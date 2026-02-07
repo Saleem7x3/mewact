@@ -278,6 +278,9 @@ VISUAL FEEDBACK:
 &&$47 N mew act $$&47
 This captures the screen and AUTO-PASTES it into chat. Use after actions to see results.
 
+⚠️ CRITICAL: You MUST end EVERY response with this command to see the result:
+&&$47 N mew act $$&47
+
 Always use sequential EXEC_IDs. End workflows with mew act to verify success.
 ```
 
@@ -306,7 +309,7 @@ VISUAL: mew act → captures screen and auto-pastes into chat
 RULES:
 1. Sequential IDs: 1, 2, 3...
 2. Use wait between app launches
-3. End with mew act to verify
+3. CRITICAL: End EVERY command sequence with 'mew act' to see the result
 
 VARIABLES:
 &&VAR 1 long content VAR&&
