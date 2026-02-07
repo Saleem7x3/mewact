@@ -344,6 +344,49 @@ LOOP_DELAY = 0.2                  # Processing loop delay (seconds)
 
 ---
 
+## Advanced Configuration & Calibration
+
+### 1. Scan Modes
+
+Control how MewAct perceives the desktop environment.
+
+| Mode | Flag | Description |
+|------|------|-------------|
+| **Monitor** (Default) | `--scan-mode monitor` | Scans monitor-by-monitor. |
+| **Window** | `--scan-mode window` | Scans individual windows directly (Global Z-order). |
+
+#### Strategies
+- **Monitor Mode**:
+    - `full` (Default): Captures entire monitor surface.
+    - `window`: Captures valid application windows on the monitor.
+    - Usage: `python mew.py --monitor-strategy window`
+
+### 2. Adaptive OCR (Power Saver)
+
+Optimizes performance for low-end hardware by splitting large windows.
+
+- **Enable**: `python mew.py --power-saver`
+- **Logic**: Windows occupying >53% of screen are split into horizontal strips with **30px vertical overlap** to ensure text on boundaries is captured.
+- **Benefit**: Reduces peak memory usage and CPU load.
+- **Note**: Disabled automatically in Window Scan Mode to preserve text integrity.
+
+### 3. Multi-Monitor Setup
+
+Target specific screens in a multi-monitor environment.
+
+- **Flag**: `--monitors <indices>` (1-based)
+- **Examples**:
+    - `python mew.py --monitors 1` (Primary only)
+    - `python mew.py --monitors 2,3` (Specific secondary screens)
+
+### 4. GPU Acceleration
+
+- **Default**: Enabled (`OCR_USE_GPU = True`).
+- **Engines**: Supported by `EasyOCR` and `PaddleOCR`. `RapidOCR` uses ONNX runtime.
+- **Fallback**: Automatically falls back to CPU if GPU is unavailable.
+
+---
+
 ## Technical Specifications
 
 ### Trigger Pattern Regex
