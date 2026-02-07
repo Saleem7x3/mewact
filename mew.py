@@ -623,8 +623,8 @@ class PerceptionEngine:
 # --- 3. COGNITIVE PLANNER (ID SELECTOR) ---
 class CognitivePlanner:
     def __init__(self, library_manager):
-        import ollama
-        self.client = ollama
+        from ollama import Client
+        self.client = Client(host='http://localhost:11434')
         self.library = library_manager 
 
     def _extract_json(self, text: str) -> str:
