@@ -1,4 +1,5 @@
 import sys
+import unicodedata
 import time
 import json
 import re
@@ -358,8 +359,15 @@ class PerceptionEngine:
                                     cx = int(((box[0][0] + box[2][0]) / 2)) + region["left"]
                                     cy = int(((box[0][1] + box[2][1]) / 2)) + region["top"]
                                     all_ui_data.append({"text": text, "x": cx, "y": cy})
+                        all_ui_data.append({"text": text, "x": cx, "y": cy})
                     except: continue
-                return all_ui_data, " ".join(all_txt_parts)
+                
+                full_text = " ".join(all_txt_parts)
+                # --- NORMALIZE "STYLISH" FONTS ---
+                # Chatbots sometimes output mathematical bold/italic unicode (e.g. 𝐇𝐞𝐥𝐥𝐨)
+                full_text = unicodedata.normalize('NFKD', full_text).encode('ascii', 'ignore').decode('utf-8')
+                
+                return all_ui_data, full_text
         except: return [], ""
 
     def copy_last_image_to_clipboard(self) -> bool:
