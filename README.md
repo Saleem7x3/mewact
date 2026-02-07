@@ -51,6 +51,13 @@ python mew.py --auto-rollback gemini
 
 ---
 
+## 🚀 Session 3 Enhancements
+- **Anchor System**: `set anchor` / `focus anchor` to mark and return to specific windows.
+- **Focus Control**: `focus window | title` and `focus chatgpt/gemini` commands.
+- **Timer**: `set timer | duration` opens Google Timer.
+- **Window Snapping**: `snap window [left/right/up]` for layout control.
+- **Clipboard**: `mew act` now captures screen and `paste` command enables seamless feedback.
+
 ## Usage Examples
 
 ### Example 1: "Help me write an email"
