@@ -40,7 +40,7 @@
         "mew act": {
             "id": 107,
             "type": "python",
-            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.3)\npyautogui.hotkey('ctrl', 'v')",
+            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(0.3)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(0.5)\npyautogui.press('enter')",
             "description": "Copy current screen to clipboard and paste it"
         },
         "open calculator": {
