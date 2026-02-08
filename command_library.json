@@ -81,13 +81,13 @@
         "mew act": {
             "id": 107,
             "type": "python",
-            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(1.0)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(2.0)\npyautogui.press('enter')\ntime.sleep(1.0)\npyautogui.press('enter')",
+            "code": "complex_mew_act(locals())",
             "description": "Copy current screen to clipboard and paste it"
         },
         "mewact": {
             "id": 107,
             "type": "python",
-            "code": "PERCEPTION_ENGINE.copy_last_image_to_clipboard()\ntime.sleep(1.0)\npyautogui.hotkey('ctrl', 'v')\ntime.sleep(2.0)\npyautogui.press('enter')\ntime.sleep(1.0)\npyautogui.press('enter')",
+            "code": "complex_mew_act(locals())",
             "description": "Alias for mew act"
         },
         "focus chat": {
