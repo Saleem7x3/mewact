@@ -294,6 +294,24 @@
             "description": "Refresh current page/view",
             "id": 224
         },
+        "mew record": {
+            "type": "python",
+            "code": "if 'session_manager' in locals() and session_manager: session_manager.start_recording('__VAR__')",
+            "description": "Start recording a new session (e.g., 'mew record | login')",
+            "id": 230
+        },
+        "mew save": {
+            "type": "python",
+            "code": "if 'session_manager' in locals() and session_manager: session_manager.save_session()",
+            "description": "Save the current recording session",
+            "id": 231
+        },
+        "call session": {
+            "type": "python",
+            "code": "#PLAY_SESSION:__VAR__",
+            "description": "Play back a recorded session with context verification",
+            "id": 232
+        },
         "go back": {
             "type": "python",
             "code": "pyautogui.hotkey('alt', 'left')",

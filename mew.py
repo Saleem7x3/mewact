@@ -651,6 +651,79 @@ class CognitivePlanner:
                 best_ratio = ratio; best_match = (item['x'], item['y'])
         return best_match
 
+
+# --- 4. SESSION MANAGER (CONTEXT MEMORY) ---
+class SessionManager:
+    def __init__(self, session_file="sessions.json"):
+        self.session_file = session_file
+        self.sessions = self._load()
+        self.active_recording = None 
+        self.is_recording = False
+        
+    def _load(self):
+        if os.path.exists(self.session_file):
+            try:
+                with open(self.session_file, 'r') as f: return json.load(f)
+            except: return {}
+        return {}
+
+    def start_recording(self, name, description=""):
+        self.active_recording = {"name": name, "description": description, "steps": []}
+        self.is_recording = True
+        print(f"{Fore.CYAN}[SESSION] Started recording: {name}")
+
+    def record_step(self, cmd_id, cmd_data, keywords):
+        # Filter keywords to keep only meaningful ones (len > 3, alphanumeric)
+        clean_keywords = [k for k in keywords if len(k) > 3 and k.isalnum()][:20]
+        args = cmd_data.get('args', '')
+        
+        # 1. Log to persistent text file (Command History)
+        try:
+            with open("recording.txt", "a", encoding="utf-8") as f:
+                 f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] CMD: {cmd_id} | ARGS: {args} | KEYWORDS: {clean_keywords}\n")
+        except Exception as e: print(f"{Fore.RED}[SESSION] Log error: {e}")
+
+        # 2. Add to active recording buffer if enabled
+        if self.is_recording:
+            step = {
+                "id": cmd_id,
+                "args": args,
+                "keywords": clean_keywords 
+            }
+            self.active_recording["steps"].append(step)
+            print(f"{Fore.CYAN}[SESSION] Recorded step: {cmd_id} (Context: {clean_keywords[:3]}...)")
+
+    def save_session(self):
+        if not self.is_recording or not self.active_recording: return
+        name = self.active_recording["name"]
+        self.sessions[name] = self.active_recording
+        with open(self.session_file, 'w') as f:
+            json.dump(self.sessions, f, indent=4)
+        self.is_recording = False
+        self.active_recording = None
+        print(f"{Fore.GREEN}[SESSION] Saved session: {name}")
+
+    def get_session(self, name):
+        return self.sessions.get(name)
+
+    def verify_context(self, current_keywords, expected_keywords, threshold=0.3):
+        if not expected_keywords: return True, 1.0
+        current_set = set([k.lower() for k in current_keywords if len(k) > 3])
+        expected_set = set([k.lower() for k in expected_keywords])
+        if not expected_set: return True, 1.0
+        
+        intersection = current_set.intersection(expected_set)
+        score = len(intersection) / len(expected_set)
+        return score >= threshold, score
+
+    def scan_for_suggestions(self, current_text):
+        # Return list of session names found in text
+        suggestions = []
+        for name, data in self.sessions.items():
+            if name.lower() in current_text.lower():
+                suggestions.append(name)
+        return suggestions
+
     def plan(self, goal: str, ui_data: List[Dict]) -> Tuple[str, bool]:
         goal_clean = goal.strip()
         
@@ -879,7 +952,8 @@ class CognitivePlanner:
 
 # --- 4. ACTION EXECUTOR ---
 class ActionExecutor:
-    def __init__(self, library_manager):
+    def __init__(self, library_manager, session_manager=None):
+        self.session_manager = session_manager
         self.library = library_manager
         self.locals = {"pyautogui": pyautogui, "subprocess": subprocess, "time": time, "os": os, "open_app": self._open_app_impl, "webbrowser": webbrowser}
 
@@ -891,6 +965,7 @@ class ActionExecutor:
 
     def execute(self, code: Union[str, List[str]], record=True, cmd_type="python", cmd_data=None) -> bool:
         globals()['LAST_ACTIVITY'] = time.time()
+        success = False
 
         """
         Execute a command based on its type.
@@ -902,36 +977,78 @@ class ActionExecutor:
         
         try:
             if cmd_type == "python":
-                return self._exec_python(code)
+                success = self._exec_python(code)
             elif cmd_type == "shell":
-                return self._exec_shell(code)
+                success = self._exec_shell(code)
             elif cmd_type == "hotkey":
-                return self._exec_hotkey(cmd_data)
+                success = self._exec_hotkey(cmd_data)
             elif cmd_type == "sequence":
-                return self._exec_sequence(cmd_data)
+                success = self._exec_sequence(cmd_data)
             elif cmd_type == "url":
-                return self._exec_url(cmd_data)
+                success = self._exec_url(cmd_data)
             elif cmd_type == "file":
-                return self._exec_file(cmd_data)
+                success = self._exec_file(cmd_data)
             else:
                 print(f"{Fore.RED}Unknown execution type: {cmd_type}")
-                return False
+                success = False
         except Exception as e:
             print(f"{Fore.RED}Runtime Error ({cmd_type}): {e}")
-            return False
+            success = False
+            
+        # SESSION RECORDING HOOK
+        # We log ALL successful commands to recording.txt, and to session JSON if recording is active.
+        if success and record and self.session_manager:
+            try:
+                # Avoid recording if command is 'mew record' or 'mew save' (IDs > 200 usually safe, but check)
+                # Checking PERCEPTION_ENGINE
+                p = self.locals.get('PERCEPTION_ENGINE')
+                if p:
+                    print(f"{Fore.YELLOW}[SESSION] Capturing context...")
+                    # Scan only text for speed? Or full scan.
+                    _, txt = p.capture_and_scan()
+                    self.session_manager.record_step(cmd_data.get('id') if cmd_data else 0, cmd_data or {}, txt.split())
+            except Exception as e:
+                print(f"{Fore.RED}[SESSION] Record error: {e}")
+                
+        return success
 
     def _exec_python(self, code: Union[str, List[str]]) -> bool:
         """Execute Python code using exec()"""
         if isinstance(code, list): code = "\n".join(code)
         if code.startswith("#PLAY_SESSION:"):
             name = code.split(":")[1]
-            for s in self.library.sessions.get(name, []):
-                time.sleep(s['pause']); self._exec_python(s['code'])
+            session = self.session_manager.get_session(name) if self.session_manager else None
+            if session:
+                for step in session.get("steps", []):
+                    # Execute step
+                    cmd_id = step["id"]
+                    # Retrieve code for ID from library
+                    cmd = self.library.get_command_by_id(cmd_id)
+                    if cmd:
+                        self.execute(cmd["code"], record=False, cmd_type=cmd["type"], cmd_data=step.get("args"))
+                        
+                        # Verify Context (Post-execution)
+                        expected = step.get("keywords", [])
+                        if expected and self.session_manager:
+                            try:
+                                p = self.locals.get('PERCEPTION_ENGINE')
+                                if p:
+                                    _, txt = p.capture_and_scan()
+                                    curr_kw = txt.split()
+                                    ok, score = self.session_manager.verify_context(curr_kw, expected)
+                                    if not ok:
+                                        print(f"{Fore.RED}[SESSION] Context Mismatch! Score: {score:.2f}. Stopping.")
+                                        return False
+                                    print(f"{Fore.GREEN}[SESSION] Context Verified (Score: {score:.2f})")
+                            except Exception as e:
+                                print(f"{Fore.RED}[SESSION] Verification error: {e}")
+                    time.sleep(1.0)
             return True
 
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer): exec(code, self.locals, self.locals)
         print(f"{Fore.GREEN}RESULT: {buffer.getvalue().strip() or 'Success'}")
+
         return True
 
     def _exec_shell(self, code: str) -> bool:
@@ -1231,7 +1348,29 @@ def complex_mew_act(exec_locals):
             print(f"{Fore.RED}[!] Failed to focus anchor: {e}")
 
     # 2. Capture & Copy
-    if p: p.copy_last_image_to_clipboard()
+    if p: 
+        p.copy_last_image_to_clipboard()
+        # SESSION SUGGESTION LOGIC
+        try:
+            sess_mgr = exec_locals.get('session_manager')
+            if sess_mgr:
+                _, txt = p.capture_and_scan()
+                suggestions = sess_mgr.scan_for_suggestions(txt)
+                if suggestions:
+                    s_name = suggestions[0]
+                    print(f"{Fore.GREEN}[SESSION] Found match: '{s_name}'")
+                    # fetch steps
+                    steps = sess_mgr.get_session(s_name).get('steps', [])
+                    # Format for AI
+                    summary = " | ".join([f"{s['id']}:{s['args']}" for s in steps])
+                    msg = f"[MEMORY] Found session '{s_name}'. Steps: {summary}"
+                    
+                    # Type message before pasting image
+                    pyautogui.write(msg)
+                    time.sleep(0.5)
+                    pyautogui.press('enter')
+                    time.sleep(0.5)
+        except Exception as e: print(f"{Fore.RED}[!] Suggestion error: {e}")
     time.sleep(1.0)
 
     # 3. Paste
@@ -1359,11 +1498,13 @@ if __name__ == "__main__":
     PERCEPTION_ENGINE = p
     
     b = CognitivePlanner(lib_mgr) 
-    h = ActionExecutor(lib_mgr)
+    session_mgr = SessionManager()
+    h = ActionExecutor(lib_mgr, session_manager=session_mgr)
     
     # Add perception engine to executor locals for mew act command
     h.locals["PERCEPTION_ENGINE"] = p
     h.locals["complex_mew_act"] = complex_mew_act
+    h.locals["session_manager"] = session_mgr
     
     # Start Watchdog if enabled
     if globals().get('IDLE_TIMEOUT', 0) > 0:
