@@ -1,0 +1,197 @@
+# MewAct Technical Documentation
+
+## Architecture
+
+MewAct operates in two modes:
+
+### Mode 1: MCP Server (Recommended)
+```
+┌─────────────┐     ┌─────────────────┐     ┌─────────────┐
+│ Claude/GPT  │────▶│ mewact_mcp.py   │────▶│   Desktop   │
+│ (AI Client) │◀────│  (MCP Server)   │◀────│   Windows   │
+└─────────────┘     └─────────────────┘     └─────────────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ mewact_legacy.py│
+                    │ (OCR, Input)  │
+                    └───────────────┘
+```
+
+### Mode 2: Legacy (OCR Trigger)
+```
+┌─────────────┐     ┌─────────────────┐     ┌─────────────┐
+│ Cloud LLM   │────▶│   Screen OCR    │────▶│mewact_legacy│
+│ (Chat)      │◀────│   (Triggers)    │◀────│   Engine    │
+└─────────────┘     └─────────────────┘     └─────────────┘
+```
+
+---
+
+## MCP Server Features
+
+### Smart Screenshots
+- Windows UI Automation (pywinauto) detects buttons, links, inputs
+- OCR fallback for text-only elements
+- Elements numbered 0-29 with red circles
+- Image optimized to max 1568px edge
+
+### Coordinate System
+```python
+# Normalized coordinates (0-1000)
+click_at_normalized(500, 500)  # Center
+click_at_normalized(0, 0)      # Top-left
+click_at_normalized(1000, 1000) # Bottom-right
+
+# Formula: X_pixel = (X_norm / 1000) × W_display
+```
+
+### Human-Like Input
+- Bezier curve mouse movements
+- Random timing variations (20-60ms between keystrokes)
+- Avoids bot detection
+
+### HiDPI Support
+- Auto-detects Windows DPI scaling
+- Coordinates auto-adjusted for 4K displays
+
+---
+
+## Advanced Screen Understanding (Phase 2)
+
+### Colored Set-of-Mark
+Annotates screenshots with type-specific colors:
+- 🔴 Red: Buttons
+- 🔵 Blue: Inputs
+- 🟢 Green: Links
+- 🟡 Yellow: Checkboxes
+
+### Local VLM Support
+Use `describe_screen()` to send screenshots to a local Vision-Language Model (like Moondream or LLaVA via Ollama) for semantic understanding when OCR fails.
+
+### Differential Screenshots
+Use `check_screen_changed()` to avoid sending redundant shots.
+
+### Hierarchical UI Tree
+Use `get_ui_tree(depth=3)` to get a JSON structure of the active window's UI elements (Parent → Child). Useful for complex forms or ambiguous buttons.
+
+### OmniParser Support (Client)
+Use `omniparser_parse(image)` to connect to an external OmniParser server for structured UI understanding. (Requires separate model server).
+
+---
+
+## Differentiation Features (Phase 3)
+
+### Code Mode
+Execute Python code directly on the desktop with `execute_script()`. Includes safety checks for dangerous commands (e.g., recursive delete, format).
+
+### Window Management
+Focus specific applications with `focus_window("Chrome")` and list visible windows with `list_windows()`.
+
+### Clipboard
+Read and write clipboard content directly with `get_clipboard()` and `set_clipboard()`.
+
+---
+
+## Command Library (400+)
+
+### Categories
+| Category | ID Range | Examples |
+|----------|----------|----------|
+| Core | 100-199 | type, click, wait, mew act |
+| System | 500-599 | task manager, settings, explorer |
+| Browser | 600-699 | chrome, new tab, refresh |
+| Office | 700-799 | word, excel, powerpoint |
+| Dev Tools | 800-899 | vs code, git, npm |
+| Communication | 900-959 | discord, slack, zoom |
+
+### Command Types
+| Type | Example |
+|------|---------|
+| `python` | `pyautogui.click(100, 200)` |
+| `hotkey` | `{"keys": ["ctrl", "c"]}` |
+| `shell` | `{"code": "dir"}` |
+| `url` | `{"url": "https://google.com"}` |
+| `sequence` | `{"steps": [101, 106]}` |
+
+---
+
+## Legacy Mode
+
+### Trigger Format
+```
+<ID>&&$47 <command> <ID>$&47
+```
+
+Example:
+```
+1&&$47 open chrome 1$&47
+2&&$47 type | hello 2$&47
+3&&$47 mew act 3$&47
+```
+
+### Variables
+```
+&&VAR 1 Long text content VAR&&
+4&&$47 type $V1 4$&47
+```
+
+### CLI Arguments
+| Flag | Description |
+|------|-------------|
+| `--target "Chrome"` | Focus on specific window |
+| `--monitors 1,2` | Target specific monitors |
+| `--ocr rapidocr` | OCR engine (rapidocr, easyocr, paddleocr) |
+| `--auto-rollback gemini` | Auto-focus back to chat |
+| `--power-saver` | Adaptive OCR for low-end machines |
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Element not found | Run `capture_screen()` first |
+| Wrong click location | Check DPI scaling, use normalized coords |
+| Slow OCR | Use `--power-saver` or target specific window |
+| Command not found | Use `list_commands("keyword")` to search |
+
+---
+
+## Security
+
+- Runs with user permissions
+- No sandboxing
+- Only use with trusted AI
+- Review command_library.json before use
+
+---
+
+## Dependencies
+
+```bash
+# Required
+pip install mcp pyautogui mss opencv-python numpy pillow colorama pywin32
+
+# MCP Mode (recommended)
+pip install pywinauto
+
+# Legacy Mode
+pip install ollama rapidocr-onnxruntime
+```
+
+---
+
+## 🐳 Docker Deployment
+
+Run MewAct in a container with Xvfb (Virtual Display):
+
+```bash
+# Build
+docker build -t mewact .
+
+# Run
+docker run -d -p 8080:8080 mewact
+```
+
+Useful for cloud deployment or headless environments.

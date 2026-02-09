@@ -1,0 +1,33 @@
+# MewAct Dependencies
+
+# Core (Required)
+mcp
+pyautogui
+mss
+opencv-python
+numpy
+pillow
+colorama
+pywinauto
+pywin32
+rapidocr-onnxruntime
+rich>=1.0.0
+pyautogui>=0.9.54
+mss>=9.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+colorama>=0.4.6
+pywin32>=306
+
+# MCP Mode (Recommended)
+pywinauto>=0.6.8
+
+# Legacy Mode
+ollama>=0.3.0
+rapidocr-onnxruntime>=1.3.0
+
+# Optional: Higher accuracy OCR
+# easyocr>=1.7.0
+# paddlepaddle>=2.5.0
+# paddleocr>=2.7.0

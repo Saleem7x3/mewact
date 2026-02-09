@@ -1,0 +1,2640 @@
+{
+    "schema_version": 2,
+    "commands": {
+        "open app": {
+            "id": 101,
+            "type": "python",
+            "code": "subprocess.Popen('start __VAR__', shell=True)",
+            "description": "Open any application by name"
+        },
+        "run powershell": {
+            "id": 126,
+            "type": "shell",
+            "code": "__VAR__",
+            "description": "Execute a PowerShell/shell command"
+        },
+        "list files": {
+            "id": 127,
+            "type": "shell",
+            "code": "dir",
+            "description": "List files in current directory"
+        },
+        "system info": {
+            "id": 128,
+            "type": "shell",
+            "code": "systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\"",
+            "description": "Get system information"
+        },
+        "open url": {
+            "id": 132,
+            "type": "url",
+            "url": "__VAR__",
+            "description": "Open a custom URL in browser"
+        },
+        "open file": {
+            "id": 133,
+            "type": "file",
+            "path": "__VAR__",
+            "description": "Open a file with its default application"
+        },
+        "quick notepad": {
+            "id": 134,
+            "type": "sequence",
+            "steps": [
+                200,
+                106
+            ],
+            "delay": 1.0,
+            "description": "Open Notepad and wait (ID 200 = open notepad, ID 106 = wait)",
+            "code": "pass # sequence"
+        },
+        "type text": {
+            "id": 102,
+            "type": "python",
+            "code": "pyautogui.write('__VAR__', interval=0.02)",
+            "description": "Type text using keyboard"
+        },
+        "click text": {
+            "id": 103,
+            "type": "python",
+            "code": "# AUTO-AIM: Click handled by Auto-Aim system using __VAR__",
+            "description": "Click on UI element by visible text (uses Auto-Aim)"
+        },
+        "minimize": {
+            "id": 104,
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'd')",
+            "description": "Minimize all windows (show desktop)"
+        },
+        "press": {
+            "id": 105,
+            "type": "python",
+            "code": "pyautogui.press('__VAR__')",
+            "description": "Press a keyboard key"
+        },
+        "wait": {
+            "id": 106,
+            "type": "python",
+            "code": "time.sleep(float('__VAR__'))",
+            "description": "Wait for specified seconds"
+        },
+        "mew act": {
+            "id": 107,
+            "type": "python",
+            "code": "complex_mew_act(locals())",
+            "description": "Copy current screen to clipboard and paste it"
+        },
+        "mewact": {
+            "id": 107,
+            "type": "python",
+            "code": "complex_mew_act(locals())",
+            "description": "Alias for mew act"
+        },
+        "focus chat": {
+            "id": 108,
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'tab')\ntime.sleep(0.5)\nimport pyautogui\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)\ntime.sleep(0.2)",
+            "description": "Switch to previous window and click input field"
+        },
+        "focus chatgpt": {
+            "id": 109,
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('ChatGPT')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Focus ChatGPT window and click input field"
+        },
+        "focus gemini": {
+            "id": 110,
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('Gemini')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Focus Gemini window and click input field"
+        },
+        "focus claude": {
+            "id": 111,
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('Claude')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Focus Claude window and click input field"
+        },
+        "switch tab": {
+            "id": 112,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'tab')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Switch to next browser tab and focus input field"
+        },
+        "previous tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'tab')",
+            "description": "Switch to previous tab",
+            "id": 607
+        },
+        "search tab": {
+            "id": 114,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('__VAR__', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search for tab by name using Chrome tab search (Ctrl+Shift+A)"
+        },
+        "goto chatgpt tab": {
+            "id": 115,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('chatgpt', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search and switch to ChatGPT tab, then focus input"
+        },
+        "goto gemini tab": {
+            "id": 116,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('gemini', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search and switch to Gemini tab, then focus input"
+        },
+        "goto claude tab": {
+            "id": 117,
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'a')\ntime.sleep(0.5)\npyautogui.write('claude', interval=0.02)\ntime.sleep(0.3)\npyautogui.press('enter')\ntime.sleep(0.5)\nscreen_width, screen_height = pyautogui.size()\npyautogui.click(screen_width // 2, screen_height - 100)",
+            "description": "Search and switch to Claude tab, then focus input"
+        },
+        "open calculator": {
+            "type": "python",
+            "code": "subprocess.Popen('calc', shell=True)",
+            "description": "Open Windows Calculator",
+            "id": 200
+        },
+        "open notepad": {
+            "type": "python",
+            "code": "subprocess.Popen('notepad', shell=True)",
+            "description": "Open Windows Notepad",
+            "id": 201
+        },
+        "open chrome": {
+            "type": "shell",
+            "code": "start chrome",
+            "description": "Open Google Chrome",
+            "id": 600
+        },
+        "open bing": {
+            "type": "python",
+            "code": "import webbrowser\nwebbrowser.open('https://www.bing.com')",
+            "description": "Open Bing in default browser",
+            "id": 204
+        },
+        "minimize all": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'd')",
+            "description": "Minimize all windows (show desktop)",
+            "id": 205
+        },
+        "copy": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'c')",
+            "description": "Copy selected content to clipboard",
+            "id": 206
+        },
+        "paste": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'v')",
+            "description": "Paste content from clipboard",
+            "id": 207
+        },
+        "cut": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'x')",
+            "description": "Cut selected content to clipboard",
+            "id": 208
+        },
+        "undo": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'z')",
+            "description": "Undo last action",
+            "id": 209
+        },
+        "redo": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'y')",
+            "description": "Redo last undone action",
+            "id": 210
+        },
+        "select all": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'a')",
+            "description": "Select all content",
+            "id": 211
+        },
+        "save": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 's')",
+            "description": "Save current file",
+            "id": 212
+        },
+        "new tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 't')",
+            "description": "Open new browser tab",
+            "id": 603
+        },
+        "close tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'w')",
+            "description": "Close current browser tab",
+            "id": 604
+        },
+        "switch window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'tab')",
+            "description": "Switch to next window",
+            "id": 551
+        },
+        "close window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'f4')",
+            "description": "Close current window",
+            "id": 550
+        },
+        "take screenshot": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'shift', 's')",
+            "description": "Open Snipping Tool / Screenshot",
+            "id": 543
+        },
+        "open task manager": {
+            "type": "shell",
+            "code": "taskmgr",
+            "description": "Open Windows Task Manager",
+            "id": 500
+        },
+        "open file explorer": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'e')",
+            "description": "Open File Explorer",
+            "id": 538
+        },
+        "open settings": {
+            "type": "shell",
+            "code": "start ms-settings:",
+            "description": "Open Windows Settings",
+            "id": 502
+        },
+        "lock screen": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'l')",
+            "description": "Lock the computer screen",
+            "id": 221
+        },
+        "search": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 's')",
+            "description": "Open Windows search",
+            "id": 222
+        },
+        "open run": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'r')",
+            "description": "Open Run dialog",
+            "id": 223
+        },
+        "refresh": {
+            "type": "python",
+            "code": "pyautogui.press('F5')",
+            "description": "Refresh current page/view",
+            "id": 224
+        },
+        "mew record": {
+            "type": "python",
+            "code": "if 'session_manager' in locals() and session_manager: session_manager.start_recording('__VAR__')",
+            "description": "Start recording a new session (e.g., 'mew record | login')",
+            "id": 230
+        },
+        "mew save": {
+            "type": "python",
+            "code": "if 'session_manager' in locals() and session_manager: session_manager.save_session()",
+            "description": "Save the current recording session",
+            "id": 231
+        },
+        "call session": {
+            "type": "python",
+            "code": "#PLAY_SESSION:__VAR__",
+            "description": "Play back a recorded session with context verification",
+            "id": 232
+        },
+        "go back": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'left')",
+            "description": "Go back in browser history",
+            "id": 611
+        },
+        "go forward": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'right')",
+            "description": "Go forward in browser history",
+            "id": 612
+        },
+        "scroll up": {
+            "type": "python",
+            "code": "pyautogui.scroll(5)",
+            "description": "Scroll up the page",
+            "id": 227
+        },
+        "scroll down": {
+            "type": "python",
+            "code": "pyautogui.scroll(-5)",
+            "description": "Scroll down the page",
+            "id": 228
+        },
+        "enter": {
+            "type": "python",
+            "code": "pyautogui.press('enter')",
+            "description": "Press Enter key",
+            "id": 229
+        },
+        "escape": {
+            "type": "python",
+            "code": "pyautogui.press('escape')",
+            "description": "Press Escape key",
+            "id": 2105
+        },
+        "space check passed": {
+            "type": "python",
+            "code": "print('SPACE_CHECK_PASSED')",
+            "description": "Print space check confirmation",
+            "id": 2106
+        },
+        "first task": {
+            "type": "python",
+            "code": "print('First Task')",
+            "description": "Print first task message",
+            "id": 2107
+        },
+        "jama is alive": {
+            "type": "python",
+            "code": "subprocess.Popen('msg * \"JAMA is alive\"', shell=True)",
+            "description": "Display message that JAMA is alive",
+            "id": 233
+        },
+        "hello from the matrix": {
+            "type": "python",
+            "code": "print('HELLO FROM THE MATRIX')",
+            "description": "Print Matrix greeting",
+            "id": 234
+        },
+        "show message": {
+            "type": "python",
+            "code": "subprocess.Popen('msg * \"Message from JAMA\"', shell=True)",
+            "description": "Show a Windows message notification",
+            "id": 235
+        },
+        "maximize window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'up')",
+            "description": "Maximize current window",
+            "id": 546
+        },
+        "minimize window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'down')",
+            "description": "Minimize current window",
+            "id": 547
+        },
+        "snap left": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'left')",
+            "description": "Snap window to left half of screen",
+            "id": 240
+        },
+        "snap right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'right')",
+            "description": "Snap window to right half of screen",
+            "id": 241
+        },
+        "find": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'f')",
+            "description": "Open find/search dialog",
+            "id": 242
+        },
+        "find and replace": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'h')",
+            "description": "Open find and replace dialog",
+            "id": 243
+        },
+        "zoom in": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'plus')",
+            "description": "Zoom in",
+            "id": 620
+        },
+        "zoom out": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'minus')",
+            "description": "Zoom out",
+            "id": 621
+        },
+        "reset zoom": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '0')",
+            "description": "Reset zoom to 100%",
+            "id": 622
+        },
+        "open command prompt": {
+            "type": "shell",
+            "code": "start cmd",
+            "description": "Open Command Prompt",
+            "id": 535
+        },
+        "open powershell": {
+            "type": "shell",
+            "code": "start powershell",
+            "description": "Open PowerShell",
+            "id": 536
+        },
+        "play pause media": {
+            "type": "python",
+            "code": "pyautogui.press('playpause')",
+            "description": "Play/pause media playback",
+            "id": 249
+        },
+        "next track": {
+            "type": "python",
+            "code": "pyautogui.press('nexttrack')",
+            "description": "Skip to next track",
+            "id": 250
+        },
+        "previous track": {
+            "type": "python",
+            "code": "pyautogui.press('prevtrack')",
+            "description": "Go to previous track",
+            "id": 251
+        },
+        "volume up": {
+            "type": "python",
+            "code": "pyautogui.press('volumeup')",
+            "description": "Increase volume",
+            "id": 957
+        },
+        "volume down": {
+            "type": "python",
+            "code": "pyautogui.press('volumedown')",
+            "description": "Decrease volume",
+            "id": 958
+        },
+        "mute": {
+            "type": "python",
+            "code": "pyautogui.press('volumemute')",
+            "description": "Mute/unmute system sound",
+            "id": 254
+        },
+        "new virtual desktop": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'ctrl', 'd')",
+            "description": "Create new virtual desktop",
+            "id": 553
+        },
+        "close virtual desktop": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'ctrl', 'f4')",
+            "description": "Close current virtual desktop",
+            "id": 554
+        },
+        "next virtual desktop": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'ctrl', 'right')",
+            "description": "Switch to next virtual desktop",
+            "id": 257
+        },
+        "previous virtual desktop": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'ctrl', 'left')",
+            "description": "Switch to previous virtual desktop",
+            "id": 258
+        },
+        "task view": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'tab')",
+            "description": "Open Task View",
+            "id": 552
+        },
+        "open action center": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'a')",
+            "description": "Open Action Center / Quick Settings",
+            "id": 541
+        },
+        "open clipboard history": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'v')",
+            "description": "Open Clipboard History",
+            "id": 542
+        },
+        "open emoji picker": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', '.')",
+            "description": "Open Emoji Picker",
+            "id": 544
+        },
+        "open notification center": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'n')",
+            "description": "Open notification center",
+            "id": 263
+        },
+        "print": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'p')",
+            "description": "Open print dialog",
+            "id": 264
+        },
+        "new file": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'n')",
+            "description": "Create new file/document",
+            "id": 265
+        },
+        "open file dialog": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'o')",
+            "description": "Open file dialog",
+            "id": 266
+        },
+        "save as": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 's')",
+            "description": "Save file as new name",
+            "id": 267
+        },
+        "bold": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'b')",
+            "description": "Toggle bold text",
+            "id": 268
+        },
+        "italic": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'i')",
+            "description": "Toggle italic text",
+            "id": 269
+        },
+        "underline": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'u')",
+            "description": "Toggle underline text",
+            "id": 270
+        },
+        "delete word left": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'backspace')",
+            "description": "Delete word to the left",
+            "id": 271
+        },
+        "delete word right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'delete')",
+            "description": "Delete word to the right",
+            "id": 272
+        },
+        "move to start of line": {
+            "type": "python",
+            "code": "pyautogui.press('home')",
+            "description": "Move cursor to start of line",
+            "id": 273
+        },
+        "move to end of line": {
+            "type": "python",
+            "code": "pyautogui.press('end')",
+            "description": "Move cursor to end of line",
+            "id": 274
+        },
+        "move to start of document": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'home')",
+            "description": "Move cursor to start of document",
+            "id": 275
+        },
+        "move to end of document": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'end')",
+            "description": "Move cursor to end of document",
+            "id": 276
+        },
+        "select word": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'right')",
+            "description": "Select word to the right",
+            "id": 277
+        },
+        "select line": {
+            "type": "python",
+            "code": "pyautogui.press('home')\npyautogui.hotkey('shift', 'end')",
+            "description": "Select entire current line",
+            "id": 278
+        },
+        "open vs code": {
+            "type": "python",
+            "code": "subprocess.Popen('code', shell=True)",
+            "description": "Open Visual Studio Code",
+            "id": 279
+        },
+        "open terminal here": {
+            "type": "python",
+            "code": "subprocess.Popen('wt -d .', shell=True)",
+            "description": "Open Windows Terminal in current directory",
+            "id": 280
+        },
+        "open git bash": {
+            "type": "python",
+            "code": "subprocess.Popen('\"C:\\\\Program Files\\\\Git\\\\git-bash.exe\"', shell=True)",
+            "description": "Open Git Bash",
+            "id": 281
+        },
+        "dev tools": {
+            "type": "python",
+            "code": "pyautogui.press('F12')",
+            "description": "Open browser developer tools",
+            "id": 282
+        },
+        "toggle comment": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '/')",
+            "description": "Toggle line comment in code editor",
+            "id": 283
+        },
+        "duplicate line": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'd')",
+            "description": "Duplicate current line in code editor",
+            "id": 284
+        },
+        "move line up": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'up')",
+            "description": "Move line up in code editor",
+            "id": 285
+        },
+        "move line down": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'down')",
+            "description": "Move line down in code editor",
+            "id": 286
+        },
+        "go to line": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'g')",
+            "description": "Go to specific line number",
+            "id": 287
+        },
+        "command palette": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'p')",
+            "description": "Open command palette in VS Code",
+            "id": 288
+        },
+        "quick open": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'p')",
+            "description": "Quick open file in VS Code",
+            "id": 289
+        },
+        "fullscreen": {
+            "type": "python",
+            "code": "pyautogui.press('f11')",
+            "description": "Toggle fullscreen mode",
+            "id": 623
+        },
+        "open properties": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'enter')",
+            "description": "Open properties dialog",
+            "id": 291
+        },
+        "context menu": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'F10')",
+            "description": "Open context menu (right-click menu)",
+            "id": 292
+        },
+        "right click": {
+            "type": "python",
+            "code": "pyautogui.click(button='right')",
+            "description": "Perform right click at current position",
+            "id": 293
+        },
+        "double click": {
+            "type": "python",
+            "code": "pyautogui.doubleClick()",
+            "description": "Perform double click at current position",
+            "id": 294
+        },
+        "triple click": {
+            "type": "python",
+            "code": "pyautogui.tripleClick()",
+            "description": "Perform triple click to select paragraph/line",
+            "id": 295
+        },
+        "rename file": {
+            "type": "shell",
+            "code": "ren __VAR1__ __VAR2__",
+            "description": "Rename a file",
+            "id": 561
+        },
+        "delete file": {
+            "type": "shell",
+            "code": "del __VAR__",
+            "description": "Delete a file",
+            "id": 558
+        },
+        "permanent delete": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'delete')",
+            "description": "Permanently delete selected file",
+            "id": 298
+        },
+        "new folder": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'n')",
+            "description": "Create new folder in File Explorer",
+            "id": 299
+        },
+        "address bar": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'd')",
+            "description": "Focus on address bar",
+            "id": 2108
+        },
+        "parent folder": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'up')",
+            "description": "Go to parent folder in File Explorer",
+            "id": 2109
+        },
+        "reopen closed tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 't')",
+            "description": "Reopen last closed tab",
+            "id": 605
+        },
+        "go to tab 1": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '1')",
+            "description": "Switch to first tab",
+            "id": 2110
+        },
+        "go to last tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '9')",
+            "description": "Switch to last tab",
+            "id": 306
+        },
+        "bookmark page": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'd')",
+            "description": "Bookmark current page",
+            "id": 615
+        },
+        "open bookmarks": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'o')",
+            "description": "Open bookmarks manager",
+            "id": 616
+        },
+        "open downloads": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'j')",
+            "description": "Open downloads page",
+            "id": 618
+        },
+        "open history": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'h')",
+            "description": "Open browser history",
+            "id": 617
+        },
+        "hard refresh": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'r')",
+            "description": "Hard refresh page (bypass cache)",
+            "id": 311
+        },
+        "incognito window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'n')",
+            "description": "Open incognito/private window",
+            "id": 312
+        },
+        "open paint": {
+            "type": "python",
+            "code": "subprocess.Popen('mspaint', shell=True)",
+            "description": "Open Microsoft Paint",
+            "id": 313
+        },
+        "open wordpad": {
+            "type": "python",
+            "code": "subprocess.Popen('wordpad', shell=True)",
+            "description": "Open WordPad",
+            "id": 314
+        },
+        "open snipping tool": {
+            "type": "python",
+            "code": "subprocess.Popen('snippingtool', shell=True)",
+            "description": "Open Snipping Tool",
+            "id": 315
+        },
+        "open control panel": {
+            "type": "shell",
+            "code": "control",
+            "description": "Open Control Panel",
+            "id": 501
+        },
+        "open system info": {
+            "type": "python",
+            "code": "subprocess.Popen('msinfo32', shell=True)",
+            "description": "Open System Information",
+            "id": 317
+        },
+        "open device manager": {
+            "type": "shell",
+            "code": "devmgmt.msc",
+            "description": "Open Device Manager",
+            "id": 503
+        },
+        "open disk management": {
+            "type": "shell",
+            "code": "diskmgmt.msc",
+            "description": "Open Disk Management",
+            "id": 504
+        },
+        "open registry editor": {
+            "type": "shell",
+            "code": "regedit",
+            "description": "Open Registry Editor",
+            "id": 506
+        },
+        "open services": {
+            "type": "shell",
+            "code": "services.msc",
+            "description": "Open Windows Services",
+            "id": 505
+        },
+        "open sound settings": {
+            "type": "shell",
+            "code": "mmsys.cpl",
+            "description": "Open Sound Settings",
+            "id": 513
+        },
+        "open network settings": {
+            "type": "python",
+            "code": "subprocess.Popen('ncpa.cpl', shell=True)",
+            "description": "Open Network Connections",
+            "id": 323
+        },
+        "open programs": {
+            "type": "python",
+            "code": "subprocess.Popen('appwiz.cpl', shell=True)",
+            "description": "Open Programs and Features",
+            "id": 324
+        },
+        "open spotify": {
+            "type": "shell",
+            "code": "start spotify:",
+            "description": "Open Spotify",
+            "id": 950
+        },
+        "open discord": {
+            "type": "shell",
+            "code": "start discord:",
+            "description": "Open Discord",
+            "id": 900
+        },
+        "open slack": {
+            "type": "shell",
+            "code": "start slack:",
+            "description": "Open Slack",
+            "id": 901
+        },
+        "open teams": {
+            "type": "shell",
+            "code": "start msteams:",
+            "description": "Open Microsoft Teams",
+            "id": 705
+        },
+        "open outlook": {
+            "type": "shell",
+            "code": "start outlook",
+            "description": "Open Microsoft Outlook",
+            "id": 703
+        },
+        "open whatsapp": {
+            "type": "shell",
+            "code": "start whatsapp:",
+            "description": "Open WhatsApp",
+            "id": 903
+        },
+        "open twitter": {
+            "type": "python",
+            "code": "import webbrowser\nwebbrowser.open('https://twitter.com')",
+            "description": "Open Twitter/X in default browser",
+            "id": 331
+        },
+        "open linkedin": {
+            "type": "python",
+            "code": "import webbrowser\nwebbrowser.open('https://www.linkedin.com')",
+            "description": "Open LinkedIn in default browser",
+            "id": 332
+        },
+        "open reddit": {
+            "type": "python",
+            "code": "import webbrowser\nwebbrowser.open('https://www.reddit.com')",
+            "description": "Open Reddit in default browser",
+            "id": 333
+        },
+        "open chatgpt": {
+            "type": "url",
+            "url": "https://chat.openai.com",
+            "description": "Open ChatGPT",
+            "id": 638
+        },
+        "open gmail": {
+            "type": "url",
+            "url": "https://mail.google.com",
+            "description": "Open Gmail",
+            "id": 633
+        },
+        "open drive": {
+            "type": "python",
+            "code": "import webbrowser\nwebbrowser.open('https://drive.google.com')",
+            "description": "Open Google Drive in default browser",
+            "id": 336
+        },
+        "magnifier": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'plus')",
+            "description": "Open Windows Magnifier",
+            "id": 337
+        },
+        "close magnifier": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'escape')",
+            "description": "Close Windows Magnifier",
+            "id": 338
+        },
+        "narrator": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'ctrl', 'enter')",
+            "description": "Toggle Windows Narrator",
+            "id": 339
+        },
+        "high contrast": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'shift', 'printscreen')",
+            "description": "Toggle high contrast mode",
+            "id": 340
+        },
+        "sleep": {
+            "type": "python",
+            "code": "subprocess.Popen('rundll32.exe powrprof.dll,SetSuspendState 0,1,0', shell=True)",
+            "description": "Put computer to sleep",
+            "id": 341
+        },
+        "shutdown": {
+            "type": "python",
+            "code": "subprocess.Popen('shutdown /s /t 60', shell=True)",
+            "description": "Shutdown computer in 60 seconds",
+            "id": 342
+        },
+        "cancel shutdown": {
+            "type": "python",
+            "code": "subprocess.Popen('shutdown /a', shell=True)",
+            "description": "Cancel scheduled shutdown",
+            "id": 343
+        },
+        "restart": {
+            "type": "python",
+            "code": "subprocess.Popen('shutdown /r /t 60', shell=True)",
+            "description": "Restart computer in 60 seconds",
+            "id": 344
+        },
+        "tab": {
+            "type": "python",
+            "code": "pyautogui.press('tab')",
+            "description": "Press Tab key",
+            "id": 345
+        },
+        "shift tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'tab')",
+            "description": "Press Shift+Tab (reverse tab)",
+            "id": 346
+        },
+        "page up": {
+            "type": "python",
+            "code": "pyautogui.press('pageup')",
+            "description": "Press Page Up key",
+            "id": 347
+        },
+        "page down": {
+            "type": "python",
+            "code": "pyautogui.press('pagedown')",
+            "description": "Press Page Down key",
+            "id": 348
+        },
+        "backspace": {
+            "type": "python",
+            "code": "pyautogui.press('backspace')",
+            "description": "Press Backspace key",
+            "id": 349
+        },
+        "delete": {
+            "type": "python",
+            "code": "pyautogui.press('delete')",
+            "description": "Press Delete key",
+            "id": 350
+        },
+        "arrow up": {
+            "type": "python",
+            "code": "pyautogui.press('up')",
+            "description": "Press Up arrow key",
+            "id": 351
+        },
+        "arrow down": {
+            "type": "python",
+            "code": "pyautogui.press('down')",
+            "description": "Press Down arrow key",
+            "id": 352
+        },
+        "arrow left": {
+            "type": "python",
+            "code": "pyautogui.press('left')",
+            "description": "Press Left arrow key",
+            "id": 353
+        },
+        "arrow right": {
+            "type": "python",
+            "code": "pyautogui.press('right')",
+            "description": "Press Right arrow key",
+            "id": 354
+        },
+        "wait 5 seconds": {
+            "type": "python",
+            "code": "time.sleep(5)",
+            "description": "Wait for 5 seconds",
+            "id": 357
+        },
+        "get current time": {
+            "type": "python",
+            "code": "import datetime\nprint(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))",
+            "description": "Print current date and time",
+            "id": 358
+        },
+        "get clipboard": {
+            "type": "python",
+            "code": "import pyperclip\nprint(pyperclip.paste())",
+            "description": "Print clipboard contents",
+            "id": 359
+        },
+        "clear clipboard": {
+            "type": "python",
+            "code": "import pyperclip\npyperclip.copy('')",
+            "description": "Clear clipboard contents",
+            "id": 360
+        },
+        "get mouse position": {
+            "type": "python",
+            "code": "print(f'Mouse position: {pyautogui.position()}')",
+            "description": "Print current mouse cursor position",
+            "id": 361
+        },
+        "center mouse": {
+            "type": "python",
+            "code": "screen_width, screen_height = pyautogui.size()\npyautogui.moveTo(screen_width // 2, screen_height // 2)",
+            "description": "Move mouse to center of screen",
+            "id": 362
+        },
+        "excel new sheet": {
+            "type": "hotkey",
+            "code": "pyautogui.hotkey('shift', 'f11')",
+            "description": "Create new Excel workbook/sheet",
+            "id": 410,
+            "keys": [
+                "ctrl",
+                "n"
+            ]
+        },
+        "excel autosum": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', '=')",
+            "description": "AutoSum in Excel",
+            "id": 726
+        },
+        "word insert link": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'k')",
+            "description": "Insert hyperlink in Word",
+            "id": 402
+        },
+        "ppt start slideshow": {
+            "type": "python",
+            "code": "pyautogui.press('f5')",
+            "description": "Start PowerPoint slideshow",
+            "id": 403
+        },
+        "ppt next slide": {
+            "type": "python",
+            "code": "pyautogui.press('space')",
+            "description": "Next PowerPoint slide",
+            "id": 404
+        },
+        "show ip address": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k ipconfig', shell=True)",
+            "description": "Show system IP address and network info",
+            "id": 405
+        },
+        "show battery status": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k WMIC Path Win32_Battery Get EstimatedChargeRemaining', shell=True)",
+            "description": "Show laptop battery percentage",
+            "id": 406
+        },
+        "show system uptime": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k net statistics server', shell=True)",
+            "description": "Show system start time/uptime",
+            "id": 407
+        },
+        "list directory": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k dir', shell=True)",
+            "description": "List files in current directory",
+            "id": 408
+        },
+        "show current user": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k whoami', shell=True)",
+            "description": "Show current logged-in user",
+            "id": 409
+        },
+        "monitor next": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'shift', 'right')",
+            "description": "Move window to next monitor",
+            "id": 2101
+        },
+        "monitor previous": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'shift', 'left')",
+            "description": "Move window to previous monitor",
+            "id": 411
+        },
+        "snap top left": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'left')\ntime.sleep(0.2)\npyautogui.hotkey('win', 'up')",
+            "description": "Snap window to top-left corner",
+            "id": 412
+        },
+        "snap top right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'right')\ntime.sleep(0.2)\npyautogui.hotkey('win', 'up')",
+            "description": "Snap window to top-right corner",
+            "id": 413
+        },
+        "snap bottom left": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'left')\ntime.sleep(0.2)\npyautogui.hotkey('win', 'down')",
+            "description": "Snap window to bottom-left corner",
+            "id": 414
+        },
+        "snap bottom right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'right')\ntime.sleep(0.2)\npyautogui.hotkey('win', 'down')",
+            "description": "Snap window to bottom-right corner",
+            "id": 415
+        },
+        "discord mute": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'm')",
+            "description": "Toggle mute in Discord",
+            "id": 906
+        },
+        "discord deafen": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'd')",
+            "description": "Toggle deafen in Discord",
+            "id": 907
+        },
+        "slack search": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'g')",
+            "description": "Search in Slack",
+            "id": 909
+        },
+        "slack jump to": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'k')",
+            "description": "Quick jump (switcher) in Slack",
+            "id": 419
+        },
+        "slack new message": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'n')",
+            "description": "New message in Slack",
+            "id": 908
+        },
+        "zoom mute": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'a')",
+            "description": "Toggle mute in Zoom",
+            "id": 913
+        },
+        "zoom video": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'v')",
+            "description": "Toggle video in Zoom",
+            "id": 914
+        },
+        "browser inspect": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'i')",
+            "description": "Open Browser Developer Tools (Inspect)",
+            "id": 423
+        },
+        "browser console": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'j')",
+            "description": "Open Browser Console",
+            "id": 424
+        },
+        "browser network tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'e')",
+            "description": "Open Browser Network Tab (Firefox/Some Chrome)",
+            "id": 425
+        },
+        "git status": {
+            "type": "shell",
+            "code": "git status",
+            "description": "Git status",
+            "id": 834
+        },
+        "git pull": {
+            "type": "shell",
+            "code": "git pull",
+            "description": "Git pull from remote",
+            "id": 838
+        },
+        "git push": {
+            "type": "shell",
+            "code": "git push",
+            "description": "Git push to remote",
+            "id": 837
+        },
+        "git log": {
+            "type": "shell",
+            "code": "git log --oneline -10",
+            "description": "Show last 10 commits",
+            "id": 842
+        },
+        "docker ps": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k docker ps', shell=True)",
+            "description": "List running docker containers",
+            "id": 430
+        },
+        "docker images": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k docker images', shell=True)",
+            "description": "List docker images",
+            "id": 431
+        },
+        "docker compose up": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k docker-compose up -d', shell=True)",
+            "description": "Start docker compose detached",
+            "id": 432
+        },
+        "docker compose down": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k docker-compose down', shell=True)",
+            "description": "Stop docker compose",
+            "id": 433
+        },
+        "photoshop new layer": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'n')",
+            "description": "Create new layer in Photoshop",
+            "id": 434
+        },
+        "photoshop invert": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'i')",
+            "description": "Invert colors in Photoshop",
+            "id": 435
+        },
+        "photoshop deselect": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'd')",
+            "description": "Deselect in Photoshop",
+            "id": 436
+        },
+        "premiere razor": {
+            "type": "python",
+            "code": "pyautogui.press('c')",
+            "description": "Select Razor tool in Premiere",
+            "id": 437
+        },
+        "premiere selection": {
+            "type": "python",
+            "code": "pyautogui.press('v')",
+            "description": "Select Selection tool in Premiere",
+            "id": 438
+        },
+        "vscode sidebar": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'b')",
+            "description": "Toggle VS Code Sidebar",
+            "id": 439
+        },
+        "vscode terminal": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '`')",
+            "description": "Toggle VS Code Terminal",
+            "id": 440
+        },
+        "vscode format": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'alt', 'f')",
+            "description": "Format document in VS Code",
+            "id": 441
+        },
+        "restart explorer": {
+            "type": "python",
+            "code": "subprocess.Popen('taskkill /f /im explorer.exe & start explorer.exe', shell=True)",
+            "description": "Restart Windows Explorer (Fixes glitchy UI)",
+            "id": 442
+        },
+        "empty recycle bin": {
+            "type": "shell",
+            "code": "rd /s /q %systemdrive%\\$Recycle.Bin",
+            "description": "Empty the Recycle Bin",
+            "id": 562
+        },
+        "lock workstation": {
+            "type": "python",
+            "code": "subprocess.Popen('rundll32.exe user32.dll,LockWorkStation', shell=True)",
+            "description": "Lock the workstation instantly",
+            "id": 444
+        },
+        "turn off monitor": {
+            "type": "python",
+            "code": "subprocess.Popen('powershell (Add-Type -MemberDefinition \"[DllImport(\"\"user32.dll\"\")] public static extern int SendMessage(int hWnd, int hMsg, int wParam, int lParam);\" -Name \"Win32SendMessage\" -Namespace Win32Functions -PassThru)::SendMessage(0xffff, 0x0112, 0xF170, 2)', shell=True)",
+            "description": "Turn off monitor (screensave)",
+            "id": 445
+        },
+        "get wifi password": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k netsh wlan show profile name=\"__VAR__\" key=clear', shell=True)",
+            "description": "Get WiFi password for a network (VAR=SSID)",
+            "id": 446
+        },
+        "flush dns": {
+            "type": "shell",
+            "code": "ipconfig /flushdns",
+            "description": "Flush DNS cache",
+            "id": 533
+        },
+        "ping google": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k ping google.com', shell=True)",
+            "description": "Ping Google to check internet",
+            "id": 448
+        },
+        "check disk": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k chkdsk', shell=True)",
+            "description": "Run Check Disk (Read only)",
+            "id": 449
+        },
+        "system info verbose": {
+            "type": "python",
+            "code": "subprocess.Popen('cmd /k systeminfo', shell=True)",
+            "description": "Show detailed system information",
+            "id": 450
+        },
+        "open startup folder": {
+            "type": "python",
+            "code": "subprocess.Popen('explorer shell:startup', shell=True)",
+            "description": "Open Windows Startup Folder",
+            "id": 451
+        },
+        "open hosts file": {
+            "type": "python",
+            "code": "subprocess.Popen('notepad c:\\\\windows\\\\system32\\\\drivers\\\\etc\\\\hosts', shell=True)",
+            "description": "Open Hosts file in Notepad",
+            "id": 452
+        },
+        "date and time settings": {
+            "type": "python",
+            "code": "subprocess.Popen('start ms-settings:dateandtime', shell=True)",
+            "description": "Open Date and Time Settings",
+            "id": 453
+        },
+        "display settings": {
+            "type": "python",
+            "code": "subprocess.Popen('start ms-settings:display', shell=True)",
+            "description": "Open Display Settings",
+            "id": 454
+        },
+        "windows update": {
+            "type": "python",
+            "code": "subprocess.Popen('start ms-settings:windowsupdate', shell=True)",
+            "description": "Open Windows Update",
+            "id": 455
+        },
+        "open google": {
+            "type": "python",
+            "code": "import webbrowser; webbrowser.open('https://google.com')",
+            "description": "Open Google in default browser",
+            "id": 28
+        },
+        "wait for text": {
+            "type": "python",
+            "code": "SYSTEM:WAIT_FOR_TEXT:__VAR__",
+            "description": "Wait until specific text appears on screen",
+            "id": 2102
+        },
+        "set timer": {
+            "type": "python",
+            "code": "import webbrowser, urllib.parse; webbrowser.open('https://www.google.com/search?q=set+timer+for+' + urllib.parse.quote('__VAR__'))",
+            "description": "Set a Google timer for specified duration (e.g. '5 minutes')",
+            "id": 2100
+        },
+        "snap window left": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'left')",
+            "description": "Snap window to left half",
+            "id": 548
+        },
+        "snap window right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'right')",
+            "description": "Snap window to right half",
+            "id": 549
+        },
+        "snap window up": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'up')",
+            "description": "Maximize or snap window up",
+            "id": 2103
+        },
+        "focus window": {
+            "type": "python",
+            "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('__VAR__')",
+            "description": "Switch focus to a window matching the title",
+            "id": 2111
+        },
+        "set anchor": {
+            "type": "python",
+            "code": "import pyautogui, ctypes, time\nANCHOR_POS = pyautogui.position()\nANCHOR_HWND = ctypes.windll.user32.GetForegroundWindow()\nprint(f'Anchor set at {ANCHOR_POS} (Window: {ANCHOR_HWND})')\ntime.sleep(1.0)\npyautogui.press('enter')",
+            "description": "Save current mouse position and active window as anchor",
+            "id": 300
+        },
+        "focus anchor": {
+            "type": "python",
+            "code": "import pyautogui, ctypes, time\nif 'ANCHOR_HWND' in locals():\n    ctypes.windll.user32.SetForegroundWindow(ANCHOR_HWND)\n    time.sleep(0.2)\n    if 'ANCHOR_POS' in locals():\n        pyautogui.click(ANCHOR_POS)\n    time.sleep(1.0)\n    pyautogui.press('enter')\nelse:\n    print('No anchor set.')",
+            "description": "Focus anchored window and click anchored position",
+            "id": 301
+        },
+        "notepad notedown": {
+            "type": "python",
+            "code": "SYSTEM:NOTEDOWN:__VAR__",
+            "description": "Write commands to Notepad and execute them sequentially (Batch Mode)",
+            "id": 2104
+        },
+        "mew reg": {
+            "type": "python",
+            "code": "if 'session_manager' in locals() and session_manager: session_manager.start_recording('__VAR__')",
+            "description": "Alias for mew record (Register new session)",
+            "id": 2112
+        },
+        "_comment_windows_system": "=== WINDOWS SYSTEM COMMANDS ===",
+        "open event viewer": {
+            "type": "shell",
+            "code": "eventvwr.msc",
+            "description": "Open Event Viewer",
+            "id": 507
+        },
+        "open system properties": {
+            "type": "shell",
+            "code": "sysdm.cpl",
+            "description": "Open System Properties",
+            "id": 508
+        },
+        "open network connections": {
+            "type": "shell",
+            "code": "ncpa.cpl",
+            "description": "Open Network Connections",
+            "id": 509
+        },
+        "open programs and features": {
+            "type": "shell",
+            "code": "appwiz.cpl",
+            "description": "Open Programs and Features (Uninstall)",
+            "id": 510
+        },
+        "open firewall settings": {
+            "type": "shell",
+            "code": "firewall.cpl",
+            "description": "Open Windows Firewall",
+            "id": 511
+        },
+        "open power options": {
+            "type": "shell",
+            "code": "powercfg.cpl",
+            "description": "Open Power Options",
+            "id": 512
+        },
+        "open display settings": {
+            "type": "shell",
+            "code": "start ms-settings:display",
+            "description": "Open Display Settings",
+            "id": 514
+        },
+        "open bluetooth settings": {
+            "type": "shell",
+            "code": "start ms-settings:bluetooth",
+            "description": "Open Bluetooth Settings",
+            "id": 515
+        },
+        "open wifi settings": {
+            "type": "shell",
+            "code": "start ms-settings:network-wifi",
+            "description": "Open WiFi Settings",
+            "id": 516
+        },
+        "open windows update": {
+            "type": "shell",
+            "code": "start ms-settings:windowsupdate",
+            "description": "Open Windows Update",
+            "id": 517
+        },
+        "open storage settings": {
+            "type": "shell",
+            "code": "start ms-settings:storagesense",
+            "description": "Open Storage Settings",
+            "id": 518
+        },
+        "open default apps": {
+            "type": "shell",
+            "code": "start ms-settings:defaultapps",
+            "description": "Open Default Apps Settings",
+            "id": 519
+        },
+        "open privacy settings": {
+            "type": "shell",
+            "code": "start ms-settings:privacy",
+            "description": "Open Privacy Settings",
+            "id": 520
+        },
+        "open date time settings": {
+            "type": "shell",
+            "code": "start ms-settings:dateandtime",
+            "description": "Open Date & Time Settings",
+            "id": 521
+        },
+        "open language settings": {
+            "type": "shell",
+            "code": "start ms-settings:regionlanguage",
+            "description": "Open Language Settings",
+            "id": 522
+        },
+        "open personalization": {
+            "type": "shell",
+            "code": "start ms-settings:personalization",
+            "description": "Open Personalization Settings",
+            "id": 523
+        },
+        "open about": {
+            "type": "shell",
+            "code": "start ms-settings:about",
+            "description": "Open About System Info",
+            "id": 524
+        },
+        "shutdown computer": {
+            "type": "shell",
+            "code": "shutdown /s /t 0",
+            "description": "Shutdown the computer immediately",
+            "id": 525
+        },
+        "restart computer": {
+            "type": "shell",
+            "code": "shutdown /r /t 0",
+            "description": "Restart the computer immediately",
+            "id": 526
+        },
+        "lock computer": {
+            "type": "python",
+            "code": "ctypes.windll.user32.LockWorkStation()",
+            "description": "Lock the computer",
+            "id": 527
+        },
+        "sleep computer": {
+            "type": "shell",
+            "code": "rundll32.exe powrprof.dll,SetSuspendState 0,1,0",
+            "description": "Put computer to sleep",
+            "id": 528
+        },
+        "kill process": {
+            "type": "shell",
+            "code": "taskkill /IM __VAR__ /F",
+            "description": "Kill a process by name (e.g., 'chrome.exe')",
+            "id": 529
+        },
+        "list processes": {
+            "type": "shell",
+            "code": "tasklist",
+            "description": "List all running processes",
+            "id": 530
+        },
+        "get ip address": {
+            "type": "shell",
+            "code": "ipconfig | findstr IPv4",
+            "description": "Get local IP address",
+            "id": 531
+        },
+        "ping host": {
+            "type": "shell",
+            "code": "ping __VAR__ -n 4",
+            "description": "Ping a host (e.g., 'google.com')",
+            "id": 532
+        },
+        "check disk space": {
+            "type": "shell",
+            "code": "wmic logicaldisk get size,freespace,caption",
+            "description": "Check disk space on all drives",
+            "id": 534
+        },
+        "open windows terminal": {
+            "type": "shell",
+            "code": "wt",
+            "description": "Open Windows Terminal",
+            "id": 537
+        },
+        "open run dialog": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'r')",
+            "description": "Open Run dialog",
+            "id": 539
+        },
+        "open search": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 's')",
+            "description": "Open Windows Search",
+            "id": 540
+        },
+        "minimize all windows": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'd')",
+            "description": "Show desktop / Minimize all",
+            "id": 545
+        },
+        "switch desktop left": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'ctrl', 'left')",
+            "description": "Switch to previous virtual desktop",
+            "id": 555
+        },
+        "switch desktop right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'ctrl', 'right')",
+            "description": "Switch to next virtual desktop",
+            "id": 556
+        },
+        "create folder": {
+            "type": "shell",
+            "code": "mkdir __VAR__",
+            "description": "Create a new folder",
+            "id": 557
+        },
+        "copy file": {
+            "type": "shell",
+            "code": "copy __VAR1__ __VAR2__",
+            "description": "Copy a file from source to destination",
+            "id": 559
+        },
+        "move file": {
+            "type": "shell",
+            "code": "move __VAR1__ __VAR2__",
+            "description": "Move a file from source to destination",
+            "id": 560
+        },
+        "check battery": {
+            "type": "shell",
+            "code": "powercfg /batteryreport && start batteryreport.html",
+            "description": "Generate and open battery report",
+            "id": 563
+        },
+        "get system uptime": {
+            "type": "shell",
+            "code": "net statistics workstation | findstr \"since\"",
+            "description": "Get system uptime",
+            "id": 564
+        },
+        "_comment_browser": "=== BROWSER COMMANDS ===",
+        "open firefox": {
+            "type": "shell",
+            "code": "start firefox",
+            "description": "Open Mozilla Firefox",
+            "id": 601
+        },
+        "open edge": {
+            "type": "shell",
+            "code": "start msedge",
+            "description": "Open Microsoft Edge",
+            "id": 602
+        },
+        "next tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'tab')",
+            "description": "Switch to next tab",
+            "id": 606
+        },
+        "go to tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '__VAR__')",
+            "description": "Go to tab by number (1-9)",
+            "id": 608
+        },
+        "reload page": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'r')",
+            "description": "Reload current page",
+            "id": 609
+        },
+        "hard reload": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'r')",
+            "description": "Hard reload (bypass cache)",
+            "id": 610
+        },
+        "open devtools": {
+            "type": "python",
+            "code": "pyautogui.press('f12')",
+            "description": "Open Developer Tools",
+            "id": 613
+        },
+        "focus address bar": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'l')",
+            "description": "Focus browser address bar",
+            "id": 614
+        },
+        "find on page": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'f')",
+            "description": "Find text on page",
+            "id": 619
+        },
+        "print page": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'p')",
+            "description": "Print current page",
+            "id": 624
+        },
+        "save page": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 's')",
+            "description": "Save current page",
+            "id": 625
+        },
+        "new window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'n')",
+            "description": "Open new browser window",
+            "id": 626
+        },
+        "new incognito window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'n')",
+            "description": "Open new incognito/private window",
+            "id": 627
+        },
+        "open chrome url": {
+            "type": "shell",
+            "code": "start chrome __VAR__",
+            "description": "Open URL in Chrome",
+            "id": 628
+        },
+        "open edge url": {
+            "type": "shell",
+            "code": "start msedge __VAR__",
+            "description": "Open URL in Edge",
+            "id": 629
+        },
+        "open firefox url": {
+            "type": "shell",
+            "code": "start firefox __VAR__",
+            "description": "Open URL in Firefox",
+            "id": 630
+        },
+        "google search": {
+            "type": "shell",
+            "code": "start chrome https://www.google.com/search?q=__VAR__",
+            "description": "Search Google for a query",
+            "id": 631
+        },
+        "youtube search": {
+            "type": "shell",
+            "code": "start chrome https://www.youtube.com/results?search_query=__VAR__",
+            "description": "Search YouTube for a query",
+            "id": 632
+        },
+        "open google drive": {
+            "type": "url",
+            "url": "https://drive.google.com",
+            "description": "Open Google Drive",
+            "id": 634
+        },
+        "open google docs": {
+            "type": "url",
+            "url": "https://docs.google.com",
+            "description": "Open Google Docs",
+            "id": 635
+        },
+        "open google sheets": {
+            "type": "url",
+            "url": "https://sheets.google.com",
+            "description": "Open Google Sheets",
+            "id": 636
+        },
+        "open github": {
+            "type": "url",
+            "url": "https://github.com",
+            "description": "Open GitHub",
+            "id": 637
+        },
+        "open claude": {
+            "type": "url",
+            "url": "https://claude.ai",
+            "description": "Open Claude AI",
+            "id": 639
+        },
+        "open gemini": {
+            "type": "url",
+            "url": "https://gemini.google.com",
+            "description": "Open Google Gemini",
+            "id": 640
+        },
+        "_comment_office": "=== MICROSOFT OFFICE COMMANDS ===",
+        "open word": {
+            "type": "shell",
+            "code": "start winword",
+            "description": "Open Microsoft Word",
+            "id": 700
+        },
+        "open excel": {
+            "type": "shell",
+            "code": "start excel",
+            "description": "Open Microsoft Excel",
+            "id": 701
+        },
+        "open powerpoint": {
+            "type": "shell",
+            "code": "start powerpnt",
+            "description": "Open Microsoft PowerPoint",
+            "id": 702
+        },
+        "open onenote": {
+            "type": "shell",
+            "code": "start onenote",
+            "description": "Open Microsoft OneNote",
+            "id": 704
+        },
+        "word new document": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'n')",
+            "description": "Create new document in Word",
+            "id": 706
+        },
+        "word save": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 's')",
+            "description": "Save document",
+            "id": 707
+        },
+        "word save as": {
+            "type": "python",
+            "code": "pyautogui.press('f12')",
+            "description": "Save As dialog",
+            "id": 708
+        },
+        "word open": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'o')",
+            "description": "Open document",
+            "id": 709
+        },
+        "word print": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'p')",
+            "description": "Print document",
+            "id": 710
+        },
+        "word undo": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'z')",
+            "description": "Undo last action",
+            "id": 711
+        },
+        "word redo": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'y')",
+            "description": "Redo last action",
+            "id": 712
+        },
+        "word bold": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'b')",
+            "description": "Bold text",
+            "id": 713
+        },
+        "word italic": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'i')",
+            "description": "Italic text",
+            "id": 714
+        },
+        "word underline": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'u')",
+            "description": "Underline text",
+            "id": 715
+        },
+        "word select all": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'a')",
+            "description": "Select all text",
+            "id": 716
+        },
+        "word find": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'f')",
+            "description": "Find text",
+            "id": 717
+        },
+        "word replace": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'h')",
+            "description": "Find and replace",
+            "id": 718
+        },
+        "word center align": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'e')",
+            "description": "Center align text",
+            "id": 719
+        },
+        "word left align": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'l')",
+            "description": "Left align text",
+            "id": 720
+        },
+        "word right align": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'r')",
+            "description": "Right align text",
+            "id": 721
+        },
+        "word justify": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'j')",
+            "description": "Justify text",
+            "id": 722
+        },
+        "excel new workbook": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'n')",
+            "description": "Create new Excel workbook",
+            "id": 723
+        },
+        "excel insert row": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'plus')",
+            "description": "Insert row in Excel",
+            "id": 724
+        },
+        "excel delete row": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'minus')",
+            "description": "Delete row in Excel",
+            "id": 725
+        },
+        "excel format cells": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '1')",
+            "description": "Format cells dialog",
+            "id": 727
+        },
+        "excel insert chart": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'f1')",
+            "description": "Insert chart in Excel",
+            "id": 728
+        },
+        "excel freeze panes": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'w', 'f', 'f')",
+            "description": "Freeze panes in Excel",
+            "id": 729
+        },
+        "excel filter": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'l')",
+            "description": "Toggle filter in Excel",
+            "id": 730
+        },
+        "excel go to cell": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'g')",
+            "description": "Go to specific cell",
+            "id": 731
+        },
+        "excel fill down": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'd')",
+            "description": "Fill down in Excel",
+            "id": 732
+        },
+        "excel fill right": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'r')",
+            "description": "Fill right in Excel",
+            "id": 733
+        },
+        "powerpoint new slide": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'm')",
+            "description": "Insert new slide",
+            "id": 734
+        },
+        "powerpoint slideshow": {
+            "type": "python",
+            "code": "pyautogui.press('f5')",
+            "description": "Start slideshow from beginning",
+            "id": 735
+        },
+        "powerpoint slideshow current": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'f5')",
+            "description": "Start slideshow from current slide",
+            "id": 736
+        },
+        "powerpoint end slideshow": {
+            "type": "python",
+            "code": "pyautogui.press('escape')",
+            "description": "End slideshow",
+            "id": 737
+        },
+        "powerpoint next slide": {
+            "type": "python",
+            "code": "pyautogui.press('pagedown')",
+            "description": "Next slide",
+            "id": 738
+        },
+        "powerpoint previous slide": {
+            "type": "python",
+            "code": "pyautogui.press('pageup')",
+            "description": "Previous slide",
+            "id": 739
+        },
+        "powerpoint duplicate slide": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'd')",
+            "description": "Duplicate slide",
+            "id": 740
+        },
+        "outlook new email": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'n')",
+            "description": "New email in Outlook",
+            "id": 741
+        },
+        "outlook reply": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'r')",
+            "description": "Reply to email",
+            "id": 742
+        },
+        "outlook reply all": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'r')",
+            "description": "Reply all",
+            "id": 743
+        },
+        "outlook forward": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'f')",
+            "description": "Forward email",
+            "id": 744
+        },
+        "outlook send": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'enter')",
+            "description": "Send email",
+            "id": 745
+        },
+        "outlook calendar": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '2')",
+            "description": "Switch to Calendar",
+            "id": 746
+        },
+        "outlook mail": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '1')",
+            "description": "Switch to Mail",
+            "id": 747
+        },
+        "outlook new meeting": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'q')",
+            "description": "New meeting request",
+            "id": 748
+        },
+        "_comment_devtools": "=== DEVELOPMENT TOOLS ===",
+        "open vscode": {
+            "type": "shell",
+            "code": "code",
+            "description": "Open Visual Studio Code",
+            "id": 800
+        },
+        "vscode open folder": {
+            "type": "shell",
+            "code": "code __VAR__",
+            "description": "Open folder in VS Code",
+            "id": 801
+        },
+        "vscode open file": {
+            "type": "shell",
+            "code": "code __VAR__",
+            "description": "Open file in VS Code",
+            "id": 802
+        },
+        "vscode command palette": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'p')",
+            "description": "Open Command Palette",
+            "id": 803
+        },
+        "vscode quick open": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'p')",
+            "description": "Quick Open file",
+            "id": 804
+        },
+        "vscode new file": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'n')",
+            "description": "New file in VS Code",
+            "id": 805
+        },
+        "vscode save": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 's')",
+            "description": "Save file",
+            "id": 806
+        },
+        "vscode save all": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'k', 's')",
+            "description": "Save all files",
+            "id": 807
+        },
+        "vscode close file": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'w')",
+            "description": "Close current file",
+            "id": 808
+        },
+        "vscode close all": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'k', 'w')",
+            "description": "Close all files",
+            "id": 809
+        },
+        "vscode toggle sidebar": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'b')",
+            "description": "Toggle sidebar",
+            "id": 810
+        },
+        "vscode toggle terminal": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '`')",
+            "description": "Toggle integrated terminal",
+            "id": 811
+        },
+        "vscode new terminal": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', '`')",
+            "description": "New terminal",
+            "id": 812
+        },
+        "vscode split editor": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '\\\\')",
+            "description": "Split editor",
+            "id": 813
+        },
+        "vscode go to definition": {
+            "type": "python",
+            "code": "pyautogui.press('f12')",
+            "description": "Go to definition",
+            "id": 814
+        },
+        "vscode peek definition": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'f12')",
+            "description": "Peek definition",
+            "id": 815
+        },
+        "vscode find references": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'f12')",
+            "description": "Find all references",
+            "id": 816
+        },
+        "vscode rename symbol": {
+            "type": "python",
+            "code": "pyautogui.press('f2')",
+            "description": "Rename symbol",
+            "id": 817
+        },
+        "vscode format document": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'alt', 'f')",
+            "description": "Format document",
+            "id": 818
+        },
+        "vscode comment line": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', '/')",
+            "description": "Toggle line comment",
+            "id": 819
+        },
+        "vscode block comment": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'alt', 'a')",
+            "description": "Toggle block comment",
+            "id": 820
+        },
+        "vscode fold region": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', '[')",
+            "description": "Fold region",
+            "id": 821
+        },
+        "vscode unfold region": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', ']')",
+            "description": "Unfold region",
+            "id": 822
+        },
+        "vscode find in files": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'f')",
+            "description": "Find in files",
+            "id": 823
+        },
+        "vscode replace in files": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'h')",
+            "description": "Replace in files",
+            "id": 824
+        },
+        "vscode git": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'g')",
+            "description": "Open Source Control",
+            "id": 825
+        },
+        "vscode extensions": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'x')",
+            "description": "Open Extensions",
+            "id": 826
+        },
+        "vscode problems": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'm')",
+            "description": "Open Problems panel",
+            "id": 827
+        },
+        "vscode debug": {
+            "type": "python",
+            "code": "pyautogui.press('f5')",
+            "description": "Start debugging",
+            "id": 828
+        },
+        "vscode debug stop": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'f5')",
+            "description": "Stop debugging",
+            "id": 829
+        },
+        "vscode step over": {
+            "type": "python",
+            "code": "pyautogui.press('f10')",
+            "description": "Step over",
+            "id": 830
+        },
+        "vscode step into": {
+            "type": "python",
+            "code": "pyautogui.press('f11')",
+            "description": "Step into",
+            "id": 831
+        },
+        "vscode step out": {
+            "type": "python",
+            "code": "pyautogui.hotkey('shift', 'f11')",
+            "description": "Step out",
+            "id": 832
+        },
+        "vscode toggle breakpoint": {
+            "type": "python",
+            "code": "pyautogui.press('f9')",
+            "description": "Toggle breakpoint",
+            "id": 833
+        },
+        "git add all": {
+            "type": "shell",
+            "code": "git add .",
+            "description": "Git add all changes",
+            "id": 835
+        },
+        "git commit": {
+            "type": "shell",
+            "code": "git commit -m \"__VAR__\"",
+            "description": "Git commit with message",
+            "id": 836
+        },
+        "git branch": {
+            "type": "shell",
+            "code": "git branch",
+            "description": "List git branches",
+            "id": 839
+        },
+        "git checkout": {
+            "type": "shell",
+            "code": "git checkout __VAR__",
+            "description": "Switch to branch",
+            "id": 840
+        },
+        "git new branch": {
+            "type": "shell",
+            "code": "git checkout -b __VAR__",
+            "description": "Create and switch to new branch",
+            "id": 841
+        },
+        "git diff": {
+            "type": "shell",
+            "code": "git diff",
+            "description": "Show git diff",
+            "id": 843
+        },
+        "npm install": {
+            "type": "shell",
+            "code": "npm install",
+            "description": "Install npm dependencies",
+            "id": 844
+        },
+        "npm start": {
+            "type": "shell",
+            "code": "npm start",
+            "description": "Run npm start",
+            "id": 845
+        },
+        "npm run dev": {
+            "type": "shell",
+            "code": "npm run dev",
+            "description": "Run npm dev server",
+            "id": 846
+        },
+        "npm run build": {
+            "type": "shell",
+            "code": "npm run build",
+            "description": "Run npm build",
+            "id": 847
+        },
+        "npm test": {
+            "type": "shell",
+            "code": "npm test",
+            "description": "Run npm tests",
+            "id": 848
+        },
+        "pip install": {
+            "type": "shell",
+            "code": "pip install __VAR__",
+            "description": "Install Python package",
+            "id": 849
+        },
+        "pip list": {
+            "type": "shell",
+            "code": "pip list",
+            "description": "List installed Python packages",
+            "id": 850
+        },
+        "python run": {
+            "type": "shell",
+            "code": "python __VAR__",
+            "description": "Run Python script",
+            "id": 851
+        },
+        "python version": {
+            "type": "shell",
+            "code": "python --version",
+            "description": "Show Python version",
+            "id": 852
+        },
+        "_comment_communication": "=== COMMUNICATION APPS ===",
+        "open telegram": {
+            "type": "shell",
+            "code": "start tg:",
+            "description": "Open Telegram",
+            "id": 902
+        },
+        "open zoom": {
+            "type": "shell",
+            "code": "start zoommtg:",
+            "description": "Open Zoom",
+            "id": 904
+        },
+        "open skype": {
+            "type": "shell",
+            "code": "start skype:",
+            "description": "Open Skype",
+            "id": 905
+        },
+        "teams mute": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'm')",
+            "description": "Toggle mute in Teams",
+            "id": 910
+        },
+        "teams video": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'o')",
+            "description": "Toggle video in Teams",
+            "id": 911
+        },
+        "teams share screen": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'e')",
+            "description": "Share screen in Teams",
+            "id": 912
+        },
+        "zoom share screen": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 's')",
+            "description": "Share screen in Zoom",
+            "id": 915
+        },
+        "zoom end meeting": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'q')",
+            "description": "End Zoom meeting",
+            "id": 916
+        },
+        "_comment_media": "=== MEDIA & ENTERTAINMENT ===",
+        "spotify play pause": {
+            "type": "python",
+            "code": "pyautogui.press('playpause')",
+            "description": "Play/Pause Spotify",
+            "id": 951
+        },
+        "spotify next": {
+            "type": "python",
+            "code": "pyautogui.press('nexttrack')",
+            "description": "Next track",
+            "id": 952
+        },
+        "spotify previous": {
+            "type": "python",
+            "code": "pyautogui.press('prevtrack')",
+            "description": "Previous track",
+            "id": 953
+        },
+        "open vlc": {
+            "type": "shell",
+            "code": "start vlc",
+            "description": "Open VLC Media Player",
+            "id": 954
+        },
+        "vlc play pause": {
+            "type": "python",
+            "code": "pyautogui.press('space')",
+            "description": "Play/Pause in VLC",
+            "id": 955
+        },
+        "vlc fullscreen": {
+            "type": "python",
+            "code": "pyautogui.press('f')",
+            "description": "Toggle fullscreen in VLC",
+            "id": 956
+        },
+        "mute volume": {
+            "type": "python",
+            "code": "pyautogui.press('volumemute')",
+            "description": "Mute/unmute volume",
+            "id": 959
+        },
+        "_comment_new_browser": "=== NEW BROWSER COMMANDS ===",
+        "copy url": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'l'); time.sleep(0.1); pyautogui.hotkey('ctrl', 'c')",
+            "description": "Copy current URL to clipboard",
+            "id": 2113
+        },
+        "duplicate tab": {
+            "type": "python",
+            "code": "pyautogui.hotkey('alt', 'd'); time.sleep(0.1); pyautogui.hotkey('alt', 'enter')",
+            "description": "Duplicate current tab",
+            "id": 2114
+        },
+        "private window": {
+            "type": "python",
+            "code": "pyautogui.hotkey('ctrl', 'shift', 'n')",
+            "description": "Open new private/incognito window",
+            "id": 2115
+        },
+        "_comment_new_system": "=== NEW SYSTEM COMMANDS ===",
+        "minimize others": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'home')",
+            "description": "Minimize all windows except the active one",
+            "id": 2116
+        },
+        "show desktop": {
+            "type": "python",
+            "code": "pyautogui.hotkey('win', 'd')",
+            "description": "Toggle show desktop",
+            "id": 2117
+        },
+        "switch user": {
+            "type": "python",
+            "code": "subprocess.Popen('tsdiscon', shell=True)",
+            "description": "Lock session and switch user",
+            "id": 2118
+        },
+        "empty clipboard": {
+            "type": "python",
+            "code": "import pyperclip; pyperclip.copy('')",
+            "description": "Clear clipboard content",
+            "id": 2120
+        },
+        "_comment_new_flow": "=== NEW FLOW COMMANDS ===",
+        "play beep": {
+            "type": "python",
+            "code": "import winsound; winsound.Beep(1000, 200)",
+            "description": "Play a system beep sound",
+            "id": 2121
+        },
+        "speak text": {
+            "type": "python",
+            "code": "import win32com.client; win32com.client.Dispatch(\"SAPI.SpVoice\").Speak(\"__VAR__\")",
+            "description": "Text-to-Speech: Speak the variable content",
+            "id": 2122
+        },
+        "wait for window": {
+            "type": "python",
+            "code": "timeout=30; start=time.time();\nimport ctypes; user32=ctypes.windll.user32\nwhile time.time()-start < timeout:\n    hwnd = user32.FindWindowW(None, \"__VAR__\")\n    if hwnd: break\n    time.sleep(0.5)",
+            "description": "Wait for a window with exact title to appear",
+            "id": 2123
+        },
+        "mouse shake": {
+            "type": "python",
+            "code": "x, y = pyautogui.position(); pyautogui.move(5, 5); pyautogui.move(-5, -5)",
+            "description": "Quick mouse shake to prevent idle/sleep",
+            "id": 2124
+        },
+        "_comment_new_input": "=== NEW INPUT COMMANDS ===",
+        "drag relative": {
+            "type": "python",
+            "code": "pyautogui.dragRel(int(__VAR__), 0, duration=0.5)",
+            "description": "Drag mouse horizontally (pixels)",
+            "id": 2125
+        },
+        "scroll right": {
+            "type": "python",
+            "code": "pyautogui.hscroll(100)",
+            "description": "Horizontal scroll right",
+            "id": 2126
+        },
+        "scroll left": {
+            "type": "python",
+            "code": "pyautogui.hscroll(-100)",
+            "description": "Horizontal scroll left",
+            "id": 2127
+        },
+        "middle click": {
+            "type": "python",
+            "code": "pyautogui.click(button='middle')",
+            "description": "Mouse middle click",
+            "id": 2128
+        }
+    }
+}

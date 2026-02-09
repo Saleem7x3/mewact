@@ -54,12 +54,11 @@ try:
 except ImportError:
     PYWINAUTO_AVAILABLE = False
 
-from mewact import PerceptionEngine, ActionExecutor, LibraryManager, SessionManager
-import mewact.config as mewact_config
-mewact_config.MCP_MODE = True
+from mewact_legacy import PerceptionEngine, ActionExecutor, LibraryManager, SessionManager
+import mewact_legacy
+mewact_legacy.MCP_MODE = True
 
 init(autoreset=True)
-
 
 
 
@@ -320,157 +319,6 @@ def execute_script(code: str) -> str:
         return buffer.getvalue().strip() or "Success"
     except Exception as e:
         return f"Error: {e}"
-
-@mcp.tool()
-def describe_screen(prompt: str = "Describe the current UI state.") -> str:
-    """
-    ℹ️ Use Vision Language Model (Moondream) to describe the screen.
-    Useful for understanding icons, images, or complex UI states that OCR misses.
-    REQUIRES: config.ACTIVE_MODE = True
-    """
-    import mewact.config as conf
-    if not conf.ACTIVE_MODE:
-        return "Active Mode is DISABLED. Enable it in config.py or pass --active to enable VLM."
-    
-    try:
-        from mewact.active_vision import ActiveVisionEngine
-        vision = ActiveVisionEngine()
-        return vision.describe_screen()
-    except Exception as e:
-        return f"Active Vision Error: {e}"
-
-
-@mcp.tool()
-def achieve_goal(goal: str) -> str:
-    """
-    🤖 AUTONOMY AGENT: Achieve a high-level goal using Vision, Memory, and Planning.
-    Example: "Clean up the desktop", "Open Excel and type hello"
-    """
-    perception, executor, lib_mgr, planner = _get_components()
-    
-    # Generate Plan
-    plan = planner.plan_goal(goal)
-    if not plan:
-        return "Failed to generate plan. Check Ollama connection or model availability."
-    
-    # Execute Plan
-    report = []
-    for step in plan:
-        action = step.get('action')
-        args = step.get('args', [])
-        
-        report.append(f"Step: {action}({args})")
-        
-        try:
-            # Map simplified planner actions to executor methods
-            if action == "execute":
-                # cmd_id = args[0]
-                # In a real implementation, we'd map this better.
-                # For now, simplistic stub.
-               pass
-            elif action == "type":
-                import pyautogui
-                pyautogui.write(str(args[0]))
-            elif action == "press":
-                import pyautogui
-                pyautogui.hotkey(*str(args[0]).split('+'))
-            elif action == "run_python":
-                 executor.execute_python_code(args[0])
-                 
-            # Note: Full implementation would need a mapping layer in ExecutionEngine
-            # to handle these abstract actions robustly.
-            
-        except Exception as e:
-            report.append(f"Error: {e}")
-            break
-            
-    return "\n".join(report)
-
-
-# --- MOBILE TOOLS ---
-
-@mcp.tool()
-def mobile_screenshot() -> str:
-    """
-    📱 MOBILE: Capture and describe the Android phone screen.
-    Returns a description of the UI, icons, and text on the phone.
-    REQUIRES: config.MOBILE_ENABLED = True
-    """
-    try:
-        from mewact.mobile import MobileController
-        from mewact.active_vision import ActiveVisionEngine
-        import numpy as np
-        
-        mobile = MobileController()
-        if not mobile.enabled or not mobile.device_id:
-            return "Mobile control disabled or no device connected. Check config/USB."
-            
-        pil_img = mobile.capture_screen()
-        if not pil_img:
-            return "Failed to capture mobile screen."
-            
-        # Use Active Vision to describe it
-        # Convert PIL to Numpy (RGB -> BGR for consistency if needed, but VLM handles it)
-        # Actually VLM_Provider.describe_image expects numpy array (BGRA/BGR usually from openCV/MSS)
-        # Let's convert PIL RGB to Numpy
-        img_array = np.array(pil_img) 
-        # PIL is RGB, confirm VLM expects that or handles it. 
-        # VLM_Provider converts BGRA->RGB using cv2. Let's adjust or pass standard.
-        # Ideally VLM_Provider should be robust.
-        # For now, let's just assume VLM can handle it or we convert to compatible format.
-        # Re-using ActiveVisionEngine directly might check 'enabled' again.
-        
-        # Better: Instantiate VLM provider directly or add 'describe_pil' to ActiveVision
-        # For simplicity, let's use the internal VLM provider if accessible.
-        
-        from mewact.active_vision import VLM_Provider
-        vlm = VLM_Provider()
-        # Mocking an 'array' that VLM expects (usually from cv2/mss)
-        # VLM code: img_rgb = cv2.cvtColor(img_array, cv2.COLOR_BGRA2RGB)
-        # So it expects BGRA. We have RGB from PIL.
-        # Let's flip it to BGRA or BGR to satisfy the VLM's conversion logic
-        import cv2
-        img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-        
-        return vlm.describe_image(img_bgr, prompt="Describe this Mobile App screen. What buttons/icons are visible?")
-        
-    except Exception as e:
-        return f"Mobile Vision Error: {e}"
-
-@mcp.tool()
-def mobile_tap(x: int, y: int) -> str:
-    """📱 MOBILE: Tap the phone screen at (x, y)."""
-    try:
-        from mewact.mobile import MobileController
-        mobile = MobileController()
-        mobile.tap(x, y)
-        return f"Tapped Mobile at ({x}, {y})"
-    except Exception as e: return f"Error: {e}"
-
-@mcp.tool()
-def mobile_home() -> str:
-    """📱 MOBILE: Press HOME button."""
-    from mewact.mobile import MobileController
-    MobileController().home()
-    return "Pressed HOME"
-    
-@mcp.tool()
-def mobile_back() -> str:
-    """📱 MOBILE: Press BACK button."""
-    from mewact.mobile import MobileController
-    MobileController().back()
-    return "Pressed BACK"
-
-@mcp.tool()
-def mobile_type(text: str) -> str:
-    """📱 MOBILE: Type text on phone."""
-    from mewact.mobile import MobileController
-    MobileController().type_text(text)
-    return f"Typed '{text}' on Mobile"
-
-
-
-
 
 
 
