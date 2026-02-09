@@ -9,14 +9,14 @@ Advanced desktop control with:
 - HiDPI Auto-Scale Detection
 
 Usage:
-    python mew_mcp.py
+    python mewact_mcp.py
 
 Configure in claude_desktop_config.json:
 {
     "mcpServers": {
         "mewact": {
             "command": "python",
-            "args": ["C:/path/to/mew_mcp.py"]
+            "args": ["C:/path/to/mewact_mcp.py"]
         }
     }
 }
@@ -60,7 +60,7 @@ except ImportError:
 init(autoreset=True)
 
 # Import MewAct components (without running main)
-from mew import PerceptionEngine, ActionExecutor, LibraryManager, SessionManager
+from mewact_legacy import PerceptionEngine, ActionExecutor, LibraryManager, SessionManager
 
 # --- CONSTANTS ---
 MAX_IMAGE_EDGE = 1568  # Anthropic's recommended max
