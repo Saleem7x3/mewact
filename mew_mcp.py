@@ -466,6 +466,75 @@ def capture_screen(annotate: bool = True, use_uia: bool = True) -> dict:
 
 
 @mcp.tool()
+def get_ui_tree(depth: int = 3) -> dict:
+    """
+    🌳 Get a hierarchical tree of UI elements (Parent -> Child relationships).
+    
+    USE THIS WHEN:
+    - You need to understand the structure of the app
+    - "Submit" button is AMBIGUOUS (e.g., two forms on screen)
+    - You want to see what's inside a specific panel/group
+    
+    Args:
+        depth: How deep to traverse the tree (default: 3 levels)
+    
+    Returns:
+        JSON object representing the UI tree
+    """
+    if not PYWINAUTO_AVAILABLE:
+        return {"error": "pywinauto not available"}
+    
+    try:
+        from pywinauto import Desktop
+        desktop = Desktop(backend="uia")
+        window = desktop.active()
+        
+        def build_tree(element, current_depth):
+            if current_depth > depth:
+                return "..."
+            
+            node = {
+                "type": element.element_info.control_type,
+                "name": element.element_info.name,
+                "rect": element.element_info.rectangle.mid_point(),
+            }
+            
+            children = element.children()
+            if children:
+                node["children"] = [build_tree(c, current_depth + 1) for c in children[:10]]  # Limit width
+            
+            return node
+
+        return {
+            "window": window.window_text(),
+            "tree": build_tree(window, 1)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def omniparser_parse(image_base64: str = None) -> dict:
+    """
+    👁️ Parse screen using Microsoft OmniParser (Structured UI Understanding).
+    
+    NOTE: Requires OmniParser model server running locally.
+    
+    Returns:
+        Structured UI elements with semantic labels
+    """
+    # Placeholder for OmniParser integration
+    # In a real setup, this would POST the image to a local serving endpoint
+    # e.g., http://localhost:8000/parse
+    
+    return {
+        "status": "not_implemented", 
+        "message": "OmniParser server not detected. Use 'describe_screen' for VLM support instead."
+    }
+
+
+
+@mcp.tool()
 def click_element(element_id: int, smooth: bool = True) -> str:
     """
     🖱️ Click a numbered UI element from the last capture_screen.
