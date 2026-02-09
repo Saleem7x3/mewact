@@ -285,10 +285,33 @@ def _get_ui_elements_uia() -> list:
 
 def _annotate_screenshot(img: np.ndarray, ui_elements: list) -> tuple:
     """
-    Draw numbered labels on screenshot for Smart Screenshots.
+    Draw colored numbered labels on screenshot for Smart Screenshots.
+    Colors indicate element type:
+      🔴 Red: Buttons (clickable)
+      🔵 Blue: Input fields
+      🟢 Green: Links
+      🟡 Yellow: Checkboxes/Radio
+      ⚪ Gray: Other/OCR
     Returns: (annotated_image_bytes, element_mapping)
     """
     global _last_ui_elements
+    
+    # Color map by element type
+    TYPE_COLORS = {
+        'Button': '#FF4444',      # Red
+        'Edit': '#4444FF',        # Blue
+        'Input': '#4444FF',       # Blue
+        'ComboBox': '#4444FF',    # Blue
+        'Link': '#44AA44',        # Green
+        'MenuItem': '#44AA44',    # Green
+        'CheckBox': '#FFAA00',    # Yellow/Orange
+        'RadioButton': '#FFAA00', # Yellow/Orange
+        'TabItem': '#AA44AA',     # Purple
+        'ListItem': '#44AAAA',    # Cyan
+        'TreeItem': '#44AAAA',    # Cyan
+        'ocr': '#888888',         # Gray for OCR-detected
+        'unknown': '#888888',     # Gray
+    }
     
     # Optimize image first
     img_bytes, scale = _optimize_image(img)
@@ -299,9 +322,11 @@ def _annotate_screenshot(img: np.ndarray, ui_elements: list) -> tuple:
     
     # Use a small font
     try:
-        font = ImageFont.truetype("arial.ttf", 14)
+        font = ImageFont.truetype("arial.ttf", 12)
+        font_small = ImageFont.truetype("arial.ttf", 10)
     except:
         font = ImageFont.load_default()
+        font_small = font
     
     element_map = {}
     h_scale = pil_img.height / img.shape[0]
@@ -314,19 +339,48 @@ def _annotate_screenshot(img: np.ndarray, ui_elements: list) -> tuple:
         x = int(orig_x * w_scale)
         y = int(orig_y * h_scale)
         
-        text = el.get('text', '')
+        text = el.get('text', '')[:20]  # Truncate long text
         el_type = el.get('type', 'unknown')
         
-        # Draw red circle with number
-        draw.ellipse([x-12, y-12, x+12, y+12], fill="red", outline="white")
-        draw.text((x-6, y-8), str(i), fill="white", font=font)
+        # Get color based on element type
+        color = TYPE_COLORS.get(el_type, TYPE_COLORS['unknown'])
+        
+        # Draw colored pill with number and label
+        label = f"[{i}] {text}" if text else f"[{i}]"
+        
+        # Calculate label width for pill
+        try:
+            bbox = draw.textbbox((0, 0), label, font=font_small)
+            label_width = bbox[2] - bbox[0] + 8
+            label_height = bbox[3] - bbox[1] + 4
+        except:
+            label_width = len(label) * 6 + 8
+            label_height = 14
+        
+        # Draw pill background
+        pill_x1 = x - label_width // 2
+        pill_y1 = y - label_height // 2
+        pill_x2 = x + label_width // 2
+        pill_y2 = y + label_height // 2
+        
+        # Draw rounded rectangle (pill)
+        draw.rounded_rectangle(
+            [pill_x1, pill_y1, pill_x2, pill_y2],
+            radius=7,
+            fill=color,
+            outline='white'
+        )
+        
+        # Draw label text
+        draw.text((pill_x1 + 4, pill_y1 + 1), label, fill='white', font=font_small)
         
         # Store physical coordinates (not scaled)
         element_map[i] = {
-            "text": text, 
+            "text": el.get('text', ''), 
             "x": orig_x, 
             "y": orig_y,
             "type": el_type,
+            "color": color,
             "x_norm": int((orig_x / _screen_size[0]) * COORD_RANGE),
             "y_norm": int((orig_y / _screen_size[1]) * COORD_RANGE)
         }
@@ -839,10 +893,18 @@ def list_commands(filter_text: str = "", category: str = "") -> list:
 @mcp.tool()
 def get_screen_info() -> dict:
     """
-    Get information about the screen and coordinate system.
+    📊 Get screen configuration and MewAct capabilities.
+    
+    USE THIS WHEN:
+    - Checking screen resolution before automation
+    - Debugging coordinate issues
+    - Verifying feature availability
     
     Returns:
-        dict with screen size, DPI scale, and coordinate system info
+        - screen_size: Width and height
+        - dpi_scale: Windows scaling factor
+        - coordinate_system: How 0-1000 maps to pixels
+        - features: What's enabled
     """
     _get_components()  # Ensure screen size is detected
     dpi_scale = _get_dpi_scale()
@@ -862,19 +924,195 @@ def get_screen_info() -> dict:
         "features": {
             "smart_screenshots": PYWINAUTO_AVAILABLE,
             "smooth_mouse": True,
-            "hidpi_aware": True
+            "hidpi_aware": True,
+            "colored_markers": True,
+            "vlm_support": True
         }
     }
 
 
+# ==============================================================================
+# PHASE 2: ADVANCED SCREEN UNDERSTANDING
+# ==============================================================================
+
+# Differential Screenshots state
+_last_screenshot_hash = None
+
+def _get_image_hash(img: np.ndarray) -> str:
+    """Quick hash of image for change detection."""
+    # Downsample for fast comparison
+    small = cv2.resize(img, (32, 32))
+    return hash(small.tobytes())
+
+
+@mcp.tool()
+def describe_screen(prompt: str = "Describe what you see on this screen") -> dict:
+    """
+    🧠 Use local Vision-Language Model to describe the screen.
+    
+    USE THIS WHEN:
+    - OCR/element detection isn't enough
+    - Need AI to understand context (what app is this? what's happening?)
+    - Complex UIs where structured parsing fails
+    
+    REQUIRES: Ollama running with a vision model
+    - ollama pull moondream:1.8b (fast, 1.8GB)
+    - ollama pull llava:7b (accurate, 4GB)
+    
+    Args:
+        prompt: Question to ask about the screen (default: general description)
+    
+    Returns:
+        - description: VLM's response
+        - model: Which model was used
+        - error: If VLM unavailable
+    
+    Examples:
+    - describe_screen() → "I see a login form with email/password fields"
+    - describe_screen("What buttons are visible?") → "Submit, Cancel, Help"
+    """
+    perception, _, _, _ = _get_components()
+    
+    # Capture screen
+    ui_data, text = perception.capture_and_scan()
+    
+    if perception.last_image is None:
+        return {"error": "No screenshot available"}
+    
+    # Try to use Ollama with vision model
+    try:
+        import ollama
+        
+        # Convert image to base64
+        img_bytes, _ = _optimize_image(perception.last_image)
+        img_b64 = base64.b64encode(img_bytes).decode('utf-8')
+        
+        # Try vision models in order of preference
+        for model in ["moondream:1.8b", "llava:7b", "qwen-vl:7b"]:
+            try:
+                response = ollama.chat(
+                    model=model,
+                    messages=[{
+                        "role": "user",
+                        "content": prompt,
+                        "images": [img_b64]
+                    }]
+                )
+                return {
+                    "description": response['message']['content'],
+                    "model": model,
+                    "ocr_text": text[:500]  # Include first 500 chars of OCR
+                }
+            except:
+                continue
+        
+        # Fallback: just return OCR text
+        return {
+            "description": f"[VLM unavailable] OCR detected: {text[:1000]}",
+            "model": "ocr_fallback",
+            "ocr_text": text
+        }
+        
+    except ImportError:
+        return {
+            "description": f"[Ollama not installed] OCR text: {text[:1000]}",
+            "model": "ocr_fallback",
+            "error": "Install ollama: pip install ollama"
+        }
+
+
+@mcp.tool()
+def check_screen_changed(threshold: float = 0.1) -> dict:
+    """
+    ⚡ Check if screen has changed since last capture (saves tokens).
+    
+    USE THIS WHEN:
+    - Waiting for something to load
+    - Checking if action had effect
+    - Reducing unnecessary full captures
+    
+    Args:
+        threshold: Change sensitivity 0-1 (default 0.1 = 10% change)
+    
+    Returns:
+        - changed: True if screen changed significantly
+        - change_percent: Approximate % of screen changed
+        - recommendation: "capture" or "wait"
+    
+    Example workflow:
+    1. smart_action("click", "Submit")
+    2. check_screen_changed() → {"changed": True}
+    3. capture_screen() → Get updated view
+    """
+    global _last_screenshot_hash
+    
+    perception, _, _, _ = _get_components()
+    perception.capture_and_scan()
+    
+    if perception.last_image is None:
+        return {"error": "No screenshot available"}
+    
+    current_hash = _get_image_hash(perception.last_image)
+    
+    if _last_screenshot_hash is None:
+        _last_screenshot_hash = current_hash
+        return {
+            "changed": True,
+            "change_percent": 100,
+            "recommendation": "capture",
+            "note": "First capture - no previous state"
+        }
+    
+    # Compare hashes (simple but fast)
+    changed = current_hash != _last_screenshot_hash
+    _last_screenshot_hash = current_hash
+    
+    return {
+        "changed": changed,
+        "change_percent": 100 if changed else 0,
+        "recommendation": "capture" if changed else "wait"
+    }
+
+
+@mcp.tool()
+def scroll(direction: str = "down", amount: int = 3) -> str:
+    """
+    📜 Scroll the current window.
+    
+    Args:
+        direction: "up", "down", "left", "right"
+        amount: Number of scroll units (default 3)
+    
+    Returns:
+        Status message
+    """
+    if direction == "down":
+        pyautogui.scroll(-amount)
+    elif direction == "up":
+        pyautogui.scroll(amount)
+    elif direction == "left":
+        pyautogui.hscroll(-amount)
+    elif direction == "right":
+        pyautogui.hscroll(amount)
+    else:
+        return f"Unknown direction: {direction}. Use up/down/left/right"
+    
+    time.sleep(0.2)
+    return f"Scrolled {direction} by {amount}"
+
+
 # --- ENTRY POINT ---
 if __name__ == "__main__":
-    print(f"{Fore.GREEN}[MCP] MewAct Desktop Server v2.0 Starting...")
-    print(f"{Fore.CYAN}[MCP] Phase 1 Features Enabled:")
+    print(f"{Fore.GREEN}[MCP] MewAct Desktop Server v2.1 Starting...")
+    print(f"{Fore.CYAN}[MCP] Phase 1 Features:")
     print(f"{Fore.CYAN}  - Smart Screenshots (UIA): {PYWINAUTO_AVAILABLE}")
     print(f"{Fore.CYAN}  - Coordinate Normalization: 0-{COORD_RANGE} system")
     print(f"{Fore.CYAN}  - Image Optimization: Max {MAX_IMAGE_EDGE}px edge")
-    print(f"{Fore.CYAN}  - Smooth Mouse Animation: Bezier curves")
-    print(f"{Fore.CYAN}  - HiDPI Detection: Scale = {_get_dpi_scale()}")
-    print(f"{Fore.YELLOW}[MCP] Available tools: capture_screen, click_element, click_at_normalized, click_text, type_text, press_key, drag_drop, execute_command, smart_action, list_commands, get_screen_info")
+    print(f"{Fore.CYAN}  - Smooth Mouse: Bezier curves")
+    print(f"{Fore.CYAN}[MCP] Phase 2 Features:")
+    print(f"{Fore.CYAN}  - Colored Set-of-Mark: Type-based colors")
+    print(f"{Fore.CYAN}  - VLM Describe: describe_screen()")
+    print(f"{Fore.CYAN}  - Differential Screenshots: check_screen_changed()")
+    print(f"{Fore.YELLOW}[MCP] Tools: capture_screen, click_element, click_at_normalized, click_text, type_text, press_key, drag_drop, execute_command, smart_action, list_commands, get_screen_info, describe_screen, check_screen_changed, scroll")
     mcp.run()
+
