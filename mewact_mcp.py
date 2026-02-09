@@ -23,6 +23,9 @@ Configure in claude_desktop_config.json:
 """
 
 import sys
+import threading
+import socket
+import winsound  # Premium audio cues
 import os
 import json
 import base64
@@ -46,6 +49,29 @@ import mss
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.text import Text
+    from rich.theme import Theme
+    RICH_AVAILABLE = True
+    # Custom theme for premium look
+    _console = Console(stderr=True, theme=Theme({
+        "info": "cyan",
+        "warning": "yellow",
+        "error": "bold red",
+        "success": "bold green",
+        "premium": "bold magenta"
+    }))
+except ImportError:
+    RICH_AVAILABLE = False
+    class MockConsole:
+        def print(self, *args, **kwargs):
+            # Fallback to print, stripping style tags roughly
+            msg = " ".join([str(a) for a in args])
+            print(msg, file=sys.stderr)
+    _console = MockConsole()
+
 from colorama import Fore, init
 
 # Windows UI Automation for Smart Screenshots
@@ -69,6 +95,9 @@ MOUSE_MOVE_DURATION = 0.3  # Seconds for smooth mouse movement
 
 # --- MCP SERVER SETUP ---
 mcp = FastMCP("MewAct Desktop v2")
+
+# Thread safety lock for PyAutoGUI
+_action_lock = threading.Lock()
 
 # Global state
 _perception = None
@@ -95,6 +124,29 @@ def _get_components():
         _screen_size = pyautogui.size()
     return _perception, _lib_mgr, _executor, _session_mgr
 
+
+# ==============================================================================
+# PHASE 4: PREMIUM FEATURES (Audio & Visuals)
+# ==============================================================================
+
+def _play_sound(sound_type: str):
+    """Play subtle premium audio cues."""
+    try:
+        if sound_type == "click":
+            # Subtle mechanical click
+            winsound.Beep(400, 50)  # Low frequency, short
+        elif sound_type == "type":
+            # Very subtle keypress
+            winsound.Beep(600, 20)
+        elif sound_type == "success":
+            # Upward chime
+            winsound.Beep(500, 100)
+            winsound.Beep(800, 150)
+        elif sound_type == "error":
+            # Low bonk
+            winsound.Beep(200, 300)
+    except:
+        pass
 
 # ==============================================================================
 # PHASE 1 FEATURE 1: HiDPI Auto-Scale Detection
@@ -428,8 +480,9 @@ def capture_screen(annotate: bool = True, use_uia: bool = True) -> dict:
     
     Example response: {"elements": [{"id": 5, "text": "Submit"}]} → use click_element(5)
     """
-    perception, _, _, _ = _get_components()
-    ui_data, text = perception.capture_and_scan()
+    with _action_lock:
+        perception, _, _, _ = _get_components()
+        ui_data, text = perception.capture_and_scan()
     
     # Merge OCR elements with UI Automation elements
     if use_uia and PYWINAUTO_AVAILABLE:
@@ -462,6 +515,7 @@ def capture_screen(annotate: bool = True, use_uia: bool = True) -> dict:
         result["image_base64"] = img_b64
         result["hint"] = "Use click_element(id) for numbered elements, or click_at_normalized(x, y) for coordinates"
     
+    _play_sound("success")
     return result
 
 
@@ -527,6 +581,17 @@ def omniparser_parse(image_base64: str = None) -> dict:
     # In a real setup, this would POST the image to a local serving endpoint
     # e.g., http://localhost:8000/parse
     
+    # Check if server is reachable (Premium stability check)
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.5)
+        result = sock.connect_ex(('localhost', 8000))
+        sock.close()
+        if result != 0:
+            return {"status": "error", "message": "OmniParser server not running on port 8000"}
+    except:
+        pass
+    
     return {
         "status": "not_implemented", 
         "message": "OmniParser server not detected. Use 'describe_screen' for VLM support instead."
@@ -559,17 +624,27 @@ def click_element(element_id: int, smooth: bool = True) -> str:
     """
     global _last_ui_elements
     
+    global _last_ui_elements
+    
+    # Auto-Healing: If element not found, refresh screen once
     if element_id not in _last_ui_elements:
-        return f"Error: Element #{element_id} not found. Run capture_screen first."
+        print(f"[Auto-Heal] Element #{element_id} not found. Refreshing screen...")
+        with _action_lock:
+            capture_screen(annotate=False)
+            
+    if element_id not in _last_ui_elements:
+        return f"Error: Element #{element_id} not found even after refresh. Run capture_screen to see current state."
     
     el = _last_ui_elements[element_id]
     x, y = el['x'], el['y']
     
-    if smooth:
-        _smooth_click(x, y)
-    else:
-        pyautogui.click(x, y)
+    with _action_lock:
+        if smooth:
+            _smooth_click(x, y)
+        else:
+            pyautogui.click(x, y)
     
+    _play_sound("click")
     time.sleep(0.2)
     return f"Clicked element #{element_id} ('{el['text']}') at ({x}, {y}) [norm: {el.get('x_norm', '?')}, {el.get('y_norm', '?')}]"
 
@@ -604,11 +679,13 @@ def click_at_normalized(x: int, y: int, smooth: bool = True) -> str:
     """
     x_phys, y_phys = _normalized_to_physical(x, y)
     
-    if smooth:
-        _smooth_click(x_phys, y_phys)
-    else:
-        pyautogui.click(x_phys, y_phys)
+    with _action_lock:
+        if smooth:
+            _smooth_click(x_phys, y_phys)
+        else:
+            pyautogui.click(x_phys, y_phys)
     
+    _play_sound("click")
     time.sleep(0.2)
     return f"Clicked at normalized ({x}, {y}) -> physical ({x_phys}, {y_phys})"
 
@@ -641,18 +718,21 @@ def click_text(text_to_find: str, smooth: bool = True) -> str:
     
     Returns: "Clicked 'Submit' at (500, 300)" or "Text 'xyz' not found"
     """
-    perception, _, _, _ = _get_components()
-    ui_data, _ = perception.capture_and_scan()
+    with _action_lock:
+        perception, _, _, _ = _get_components()
+        ui_data, _ = perception.capture_and_scan()
     
     # Find matching element
     text_lower = text_to_find.lower()
     for el in ui_data:
         if text_lower in el.get('text', '').lower():
             x, y = el['x'], el['y']
-            if smooth:
-                _smooth_click(x, y)
-            else:
-                pyautogui.click(x, y)
+            
+            with _action_lock:
+                if smooth:
+                    _smooth_click(x, y)
+                else:
+                    pyautogui.click(x, y)
             time.sleep(0.2)
             return f"Clicked '{el['text']}' at ({x}, {y})"
     
@@ -686,17 +766,20 @@ def type_text(text: str, press_enter: bool = False, human_like: bool = True) -> 
     1. click_text("Search") or click_element(id) → Focus input
     2. type_text("your text", press_enter=True) → Type and submit
     """
-    if human_like:
-        for char in text:
-            pyautogui.write(char, _pause=False)
-            time.sleep(0.02 + random.uniform(0, 0.04))  # 20-60ms per char
-    else:
-        pyautogui.write(text, interval=0.02)
+    with _action_lock:
+        if human_like:
+            for char in text:
+                pyautogui.write(char, _pause=False)
+                time.sleep(0.02 + random.uniform(0, 0.04))  # 20-60ms per char
+        else:
+            pyautogui.write(text, interval=0.02)
+        
+        if press_enter:
+            time.sleep(0.1 + random.uniform(0, 0.1))
+            pyautogui.press('enter')
+            _play_sound("click")
     
-    if press_enter:
-        time.sleep(0.1 + random.uniform(0, 0.1))
-        pyautogui.press('enter')
-    
+    _play_sound("type")
     return f"Typed: {text[:50]}{'...' if len(text) > 50 else ''}"
 
 
@@ -733,25 +816,26 @@ def press_key(key: str, hold_duration: float = 0) -> str:
     - press_key("ctrl+s") → Save
     - press_key("alt+tab") → Switch window
     """
-    if '+' in key:
-        parts = [k.strip() for k in key.split('+')]
-        if hold_duration > 0:
-            # Hold modifier keys
-            for part in parts[:-1]:
-                pyautogui.keyDown(part)
-            time.sleep(hold_duration)
-            pyautogui.press(parts[-1])
-            for part in reversed(parts[:-1]):
-                pyautogui.keyUp(part)
+    with _action_lock:
+        if '+' in key:
+            parts = [k.strip() for k in key.split('+')]
+            if hold_duration > 0:
+                # Hold modifier keys
+                for part in parts[:-1]:
+                    pyautogui.keyDown(part)
+                time.sleep(hold_duration)
+                pyautogui.press(parts[-1])
+                for part in reversed(parts[:-1]):
+                    pyautogui.keyUp(part)
+            else:
+                pyautogui.hotkey(*parts)
         else:
-            pyautogui.hotkey(*parts)
-    else:
-        if hold_duration > 0:
-            pyautogui.keyDown(key)
-            time.sleep(hold_duration)
-            pyautogui.keyUp(key)
-        else:
-            pyautogui.press(key)
+            if hold_duration > 0:
+                pyautogui.keyDown(key)
+                time.sleep(hold_duration)
+                pyautogui.keyUp(key)
+            else:
+                pyautogui.press(key)
     
     return f"Pressed: {key}" + (f" (held {hold_duration}s)" if hold_duration > 0 else "")
 
@@ -786,17 +870,18 @@ def drag_drop(start_x: int, start_y: int, end_x: int, end_y: int,
         sx, sy = start_x, start_y
         ex, ey = end_x, end_y
     
-    if smooth:
-        _smooth_move(sx, sy)
-        time.sleep(0.1)
-        pyautogui.mouseDown()
-        time.sleep(0.1)
-        _smooth_move(ex, ey)
-        time.sleep(0.1)
-        pyautogui.mouseUp()
-    else:
-        pyautogui.moveTo(sx, sy)
-        pyautogui.drag(ex - sx, ey - sy, duration=0.5)
+    with _action_lock:
+        if smooth:
+            _smooth_move(sx, sy)
+            time.sleep(0.1)
+            pyautogui.mouseDown()
+            time.sleep(0.1)
+            _smooth_move(ex, ey)
+            time.sleep(0.1)
+            pyautogui.mouseUp()
+        else:
+            pyautogui.moveTo(sx, sy)
+            pyautogui.drag(ex - sx, ey - sy, duration=0.5)
     
     return f"Dragged from ({sx}, {sy}) to ({ex}, {ey})"
 
@@ -1400,9 +1485,25 @@ def set_clipboard(text: str) -> str:
 
 # --- ENTRY POINT ---
 if __name__ == "__main__":
-    print(f"{Fore.GREEN}[MCP] MewAct Desktop Server v2.2 Starting...")
-    print(f"{Fore.CYAN}[MCP] Phase 1: Smart Screenshots, Coord Normalization, Smooth Mouse")
-    print(f"{Fore.CYAN}[MCP] Phase 2: Colored Markers, VLM Describe, Differential Screenshots")
-    print(f"{Fore.CYAN}[MCP] Phase 3: Code Mode, Window Focus, Clipboard")
-    print(f"{Fore.YELLOW}[MCP] Tools (18): capture_screen, click_element, click_at_normalized, click_text, type_text, press_key, drag_drop, execute_command, smart_action, list_commands, get_screen_info, describe_screen, check_screen_changed, scroll, execute_script, focus_window, list_windows, get_clipboard, set_clipboard")
+    if RICH_AVAILABLE:
+        _console.print(Panel(
+            Text.assemble(
+                ("MewAct Desktop Server v2.2\n", "bold magenta"),
+                ("AI Agent Desktop Control Bridge", "cyan")
+            ),
+            title="[bold green]MCP STARTED[/bold green]",
+            border_style="magenta",
+            expand=False
+        ))
+        _console.print("[info]Phase 1:[/info] Smart Screenshots, Coord Norm, Smooth Mouse")
+        _console.print("[info]Phase 2:[/info] Colored Markers, VLM, Diff Screens, UI Tree")
+        _console.print("[info]Phase 3:[/info] Code Mode, Window Focus, Clipboard, Docker")
+        _console.print("[premium]Phase 4:[/premium] Premium Audio, Visuals, Stability Code")
+        _console.print(f"[warning]Active Tools:[/warning] {len(mcp._tools)} registered")
+    else:
+        print(f"{Fore.GREEN}[MCP] MewAct Desktop Server v2.2 Starting...")
+        print(f"{Fore.CYAN}[MCP] Premium Features Enabled (Audio/Stability)") 
+        print(f"{Fore.YELLOW}[MCP] Tools: {len(mcp._tools)} registered")
+    
+    _play_sound("success")
     mcp.run()

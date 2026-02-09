@@ -1,7 +1,17 @@
 # MewAct Dependencies
 
 # Core (Required)
-mcp>=1.0.0
+mcp
+pyautogui
+mss
+opencv-python
+numpy
+pillow
+colorama
+pywinauto
+pywin32
+rapidocr-onnxruntime
+rich>=1.0.0
 pyautogui>=0.9.54
 mss>=9.0.0
 opencv-python>=4.8.0
