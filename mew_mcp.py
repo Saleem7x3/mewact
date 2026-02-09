@@ -348,19 +348,31 @@ def _annotate_screenshot(img: np.ndarray, ui_elements: list) -> tuple:
 @mcp.tool()
 def capture_screen(annotate: bool = True, use_uia: bool = True) -> dict:
     """
-    Capture screen with Smart Screenshots (numbered clickable elements).
+    📸 ALWAYS START HERE - Capture screen and detect clickable UI elements.
+    
+    USE THIS WHEN:
+    - You need to see what's on screen
+    - You want to find buttons, links, or text to click
+    - Before using click_element() (this provides the element IDs)
+    
+    DO NOT USE:
+    - If you already know exact coordinates (use click_at_normalized instead)
+    
+    WORKFLOW:
+    1. Call capture_screen() → Get numbered elements
+    2. Find target element ID in response
+    3. Call click_element(id) to click it
     
     Args:
-        annotate: If True, overlay numbered IDs on clickable elements
-        use_uia: If True, use Windows UI Automation for better element detection
+        annotate: Overlay red numbered circles on clickable elements (default: True)
+        use_uia: Use Windows UI Automation for better detection (default: True)
     
     Returns:
-        dict with:
-        - text: OCR content
-        - elements: List of detected UI elements with IDs
-        - image_base64: Annotated screenshot (if annotate=True)
-        - scale_factor: Image resize factor for coordinate translation
-        - hint: Usage instructions
+        - text: All visible text on screen (OCR)
+        - elements: [{id: 0, text: "Submit", x_norm: 500, y_norm: 300}, ...]
+        - image_base64: Screenshot with numbered elements
+    
+    Example response: {"elements": [{"id": 5, "text": "Submit"}]} → use click_element(5)
     """
     perception, _, _, _ = _get_components()
     ui_data, text = perception.capture_and_scan()
@@ -402,15 +414,25 @@ def capture_screen(annotate: bool = True, use_uia: bool = True) -> dict:
 @mcp.tool()
 def click_element(element_id: int, smooth: bool = True) -> str:
     """
-    Click on a detected UI element by its ID from last capture_screen.
-    Uses smooth mouse animation to avoid bot detection.
+    🖱️ Click a numbered UI element from the last capture_screen.
+    
+    USE THIS WHEN:
+    - You see a numbered element in capture_screen results
+    - The screenshot shows red circles with numbers
+    - Example: element #5 is "Submit" button → click_element(5)
+    
+    DO NOT USE:
+    - If you haven't called capture_screen first (will fail)
+    - If you want to click by text (use click_text instead)
+    - If you know coordinates (use click_at_normalized instead)
     
     Args:
-        element_id: The numbered ID shown on the annotated screenshot
-        smooth: If True, use human-like smooth movement (default True)
+        element_id: The number shown in red circle (0-29). REQUIRED.
+        smooth: Human-like mouse movement to avoid bot detection (default: True)
     
-    Returns:
-        Status message with clicked coordinates
+    Returns: "Clicked element #5 ('Submit') at (500, 300)"
+    
+    Example: capture_screen shows element #3 is "OK" → click_element(3)
     """
     global _last_ui_elements
     
@@ -432,18 +454,30 @@ def click_element(element_id: int, smooth: bool = True) -> str:
 @mcp.tool()
 def click_at_normalized(x: int, y: int, smooth: bool = True) -> str:
     """
-    Click at normalized coordinates (0-1000 range).
+    🎯 Click at exact screen position using 0-1000 coordinate system.
     
-    The AI model can specify coordinates in a 0-1000 range for both axes,
-    which will be automatically translated to physical screen pixels.
+    USE THIS WHEN:
+    - You know where to click but there's no text/element ID
+    - Clicking on images, icons, or whitespace
+    - Using coordinates from capture_screen's x_norm/y_norm values
+    
+    DO NOT USE:
+    - If there's visible text (use click_text - more reliable)
+    - If you have an element ID (use click_element - more accurate)
+    
+    COORDINATE SYSTEM:
+    - (0, 0) = Top-left corner
+    - (500, 500) = Center of screen
+    - (1000, 1000) = Bottom-right corner
     
     Args:
-        x: X coordinate in 0-1000 range
-        y: Y coordinate in 0-1000 range
-        smooth: If True, use human-like smooth movement
+        x: Horizontal position 0-1000 (0=left, 1000=right). REQUIRED.
+        y: Vertical position 0-1000 (0=top, 1000=bottom). REQUIRED.
+        smooth: Human-like movement (default: True)
     
-    Returns:
-        Status message with physical coordinates
+    Examples:
+    - click_at_normalized(500, 500) → Click center
+    - click_at_normalized(950, 50) → Click top-right area
     """
     x_phys, y_phys = _normalized_to_physical(x, y)
     
@@ -459,14 +493,30 @@ def click_at_normalized(x: int, y: int, smooth: bool = True) -> str:
 @mcp.tool()
 def click_text(text_to_find: str, smooth: bool = True) -> str:
     """
-    Find text on screen and click it with smooth mouse movement.
+    🔍 Find visible text on screen and click it. Most reliable click method!
+    
+    USE THIS WHEN:
+    - You can see the button/link text: "Submit", "Cancel", "Next"
+    - Text is clearly visible on screen
+    - You don't have an element ID from capture_screen
+    
+    DO NOT USE:
+    - For icons without text (use click_at_normalized)
+    - If you already have element ID (use click_element - faster)
+    
+    MATCHING:
+    - Case-insensitive: "submit" matches "Submit", "SUBMIT"
+    - Partial match: "sub" matches "Submit"
     
     Args:
-        text_to_find: The text to search for and click
-        smooth: If True, use human-like smooth movement
+        text_to_find: Text to search for (case-insensitive, partial OK). REQUIRED.
+        smooth: Human-like movement (default: True)
     
-    Returns:
-        Status message
+    Examples:
+    - click_text("Submit") → Clicks "Submit" button
+    - click_text("next") → Clicks "Next" or "Next Step"
+    
+    Returns: "Clicked 'Submit' at (500, 300)" or "Text 'xyz' not found"
     """
     perception, _, _, _ = _get_components()
     ui_data, _ = perception.capture_and_scan()
@@ -489,15 +539,29 @@ def click_text(text_to_find: str, smooth: bool = True) -> str:
 @mcp.tool()
 def type_text(text: str, press_enter: bool = False, human_like: bool = True) -> str:
     """
-    Type text using the keyboard with optional human-like timing.
+    ⌨️ Type text into the currently focused input field.
+    
+    USE THIS WHEN:
+    - Typing into a text field, search box, form input
+    - After clicking on an input field
+    - Entering URLs, messages, search queries
+    
+    DO NOT USE:
+    - For keyboard shortcuts (use press_key: "ctrl+c")
+    - If you haven't clicked to focus an input first
     
     Args:
-        text: The text to type
-        press_enter: If True, press Enter after typing
-        human_like: If True, add slight random delays between keystrokes
+        text: The text to type. REQUIRED.
+        press_enter: Press Enter after typing (default: False). Set True for search/submit.
+        human_like: Random keystroke timing to avoid bot detection (default: True)
     
-    Returns:
-        Status message
+    Examples:
+    - type_text("hello world") → Types "hello world"
+    - type_text("search query", press_enter=True) → Type and submit
+    
+    WORKFLOW:
+    1. click_text("Search") or click_element(id) → Focus input
+    2. type_text("your text", press_enter=True) → Type and submit
     """
     if human_like:
         for char in text:
@@ -516,14 +580,35 @@ def type_text(text: str, press_enter: bool = False, human_like: bool = True) -> 
 @mcp.tool()
 def press_key(key: str, hold_duration: float = 0) -> str:
     """
-    Press a keyboard key or hotkey with optional hold duration.
+    ⚡ Press keyboard keys or hotkey combinations.
+    
+    USE THIS WHEN:
+    - Pressing Enter, Escape, Tab, Arrow keys
+    - Keyboard shortcuts: Ctrl+C, Ctrl+V, Alt+Tab, Ctrl+S
+    - Function keys: F5, F11
+    
+    DO NOT USE:
+    - For typing text (use type_text)
+    
+    COMMON KEYS:
+    - enter, escape, tab, backspace, delete
+    - up, down, left, right (arrow keys)
+    - f1-f12, home, end, pageup, pagedown
+    
+    HOTKEY FORMAT: "modifier+key" (use + to combine)
+    - ctrl+c, ctrl+v, ctrl+z (copy, paste, undo)
+    - alt+tab (switch windows)
+    - ctrl+shift+s (save as)
+    - win+d (show desktop)
     
     Args:
-        key: Key name (e.g., 'enter', 'escape', 'ctrl+c', 'alt+tab')
-        hold_duration: Seconds to hold key (0 for normal press)
+        key: Key or combo like "enter", "ctrl+c", "alt+f4". REQUIRED.
+        hold_duration: Seconds to hold (0=normal press, >0=hold and release)
     
-    Returns:
-        Status message
+    Examples:
+    - press_key("enter") → Press Enter
+    - press_key("ctrl+s") → Save
+    - press_key("alt+tab") → Switch window
     """
     if '+' in key:
         parts = [k.strip() for k in key.split('+')]
@@ -552,18 +637,24 @@ def press_key(key: str, hold_duration: float = 0) -> str:
 def drag_drop(start_x: int, start_y: int, end_x: int, end_y: int, 
               normalized: bool = True, smooth: bool = True) -> str:
     """
-    Perform drag and drop operation.
+    ↕️ Drag from one position to another (drag-and-drop).
+    
+    USE THIS WHEN:
+    - Moving files between folders
+    - Dragging sliders
+    - Rearranging items
+    - Drawing selections
     
     Args:
-        start_x: Start X coordinate
-        start_y: Start Y coordinate
-        end_x: End X coordinate
-        end_y: End Y coordinate
-        normalized: If True, coordinates are in 0-1000 range
-        smooth: If True, use smooth movement
+        start_x: Starting X position (0-1000 if normalized). REQUIRED.
+        start_y: Starting Y position (0-1000 if normalized). REQUIRED.
+        end_x: Ending X position (0-1000 if normalized). REQUIRED.
+        end_y: Ending Y position (0-1000 if normalized). REQUIRED.
+        normalized: Coordinates in 0-1000 range (default: True)
+        smooth: Human-like movement (default: True)
     
-    Returns:
-        Status message
+    Example: Drag from top-left to center:
+    - drag_drop(100, 100, 500, 500)
     """
     if normalized:
         sx, sy = _normalized_to_physical(start_x, start_y)
@@ -590,14 +681,24 @@ def drag_drop(start_x: int, start_y: int, end_x: int, end_y: int,
 @mcp.tool()
 def execute_command(command_id: int, variables: str = "") -> str:
     """
-    Execute a command from the MewAct command library by ID.
+    📚 Execute a pre-built command from MewAct's 400+ command library.
+    
+    USE THIS WHEN:
+    - Opening apps: execute_command(700) → Open Word
+    - System tasks: execute_command(520) → Open Task Manager
+    - Browser actions: execute_command(600) → Open Chrome
+    
+    FIND COMMANDS:
+    - Use list_commands("word") to find Word-related commands
+    - Use list_commands("browser") to find browser commands
     
     Args:
-        command_id: The command ID (see list_commands)
-        variables: Optional variables to pass (replaces __VAR__ in command)
+        command_id: The ID from list_commands. REQUIRED.
+        variables: Text to substitute for __VAR__ placeholder (for commands that need input)
     
-    Returns:
-        Status message
+    Examples:
+    - execute_command(700) → Open Microsoft Word
+    - execute_command(836, "fix: bug") → git commit -m "fix: bug"
     """
     _, lib_mgr, executor, _ = _get_components()
     
@@ -619,16 +720,30 @@ def execute_command(command_id: int, variables: str = "") -> str:
 @mcp.tool()
 def smart_action(action: str, target: str = "", smooth: bool = True) -> dict:
     """
-    Perform an intelligent action in one call (1-Call Workflow).
-    Captures screen, finds target, and executes action - all in one tool call.
+    🚀 ALL-IN-ONE: Capture screen + find target + execute action in ONE call!
+    
+    USE THIS FOR SPEED:
+    - Reduces latency from 15s to 3s per interaction
+    - No need to call capture_screen first
+    
+    ACTIONS:
+    - "click": Find text and click it
+    - "double_click": Double-click on text
+    - "right_click": Right-click on text  
+    - "type": Type text into current focus
+    - "wait_for": Wait up to 5s for text to appear
     
     Args:
-        action: One of 'click', 'type', 'wait_for', 'double_click', 'right_click'
-        target: Text to find/interact with, or text to type
-        smooth: If True, use human-like smooth movement
+        action: "click", "double_click", "right_click", "type", or "wait_for". REQUIRED.
+        target: Text to find (for clicks) or text to type. REQUIRED.
+        smooth: Human-like movement (default: True)
     
-    Returns:
-        dict with status and details
+    Examples:
+    - smart_action("click", "Submit") → Find and click Submit
+    - smart_action("type", "Hello") → Type Hello
+    - smart_action("wait_for", "Loading complete") → Wait for text
+    
+    Returns: {"status": "clicked", "target": "Submit", "x": 500, "y": 300}
     """
     perception, _, _, _ = _get_components()
     
