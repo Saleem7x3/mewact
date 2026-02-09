@@ -2,7 +2,7 @@
 
 **AI Desktop Control via MCP + 400+ Commands**
 
-> MewAct is a Model Context Protocol (MCP) server that enables AI assistants (Claude, GPT, Gemini) to control your Windows PC. Features smart screenshots, coordinate normalization, human-like mouse movements, and a 400+ command library.
+> MewAct is a Model Context Protocol (MCP) server that enables AI assistants (Claude, GPT, Gemini) to control your Windows PC. It also supports **direct control from chatbots like Gemini/ChatGPT** without CLI (via legacy OCR triggers). Features smart screenshots, coordinate normalization, human-like mouse movements, and a 400+ command library.
 
 ---
 
