@@ -346,19 +346,19 @@
             "type": "python",
             "code": "pyautogui.press('escape')",
             "description": "Press Escape key",
-            "id": 230
+            "id": 2105
         },
         "space check passed": {
             "type": "python",
             "code": "print('SPACE_CHECK_PASSED')",
             "description": "Print space check confirmation",
-            "id": 231
+            "id": 2106
         },
         "first task": {
             "type": "python",
             "code": "print('First Task')",
             "description": "Print first task message",
-            "id": 232
+            "id": 2107
         },
         "jama is alive": {
             "type": "python",
@@ -754,13 +754,13 @@
             "type": "python",
             "code": "pyautogui.hotkey('alt', 'd')",
             "description": "Focus on address bar",
-            "id": 300
+            "id": 2108
         },
         "parent folder": {
             "type": "python",
             "code": "pyautogui.hotkey('alt', 'up')",
             "description": "Go to parent folder in File Explorer",
-            "id": 305
+            "id": 2109
         },
         "reopen closed tab": {
             "type": "python",
@@ -772,7 +772,7 @@
             "type": "python",
             "code": "pyautogui.hotkey('ctrl', '1')",
             "description": "Switch to first tab",
-            "id": 305
+            "id": 2110
         },
         "go to last tab": {
             "type": "python",
@@ -1172,7 +1172,7 @@
             "type": "python",
             "code": "pyautogui.hotkey('win', 'shift', 'right')",
             "description": "Move window to next monitor",
-            "id": 410
+            "id": 2101
         },
         "monitor previous": {
             "type": "python",
@@ -1454,7 +1454,7 @@
             "type": "python",
             "code": "SYSTEM:WAIT_FOR_TEXT:__VAR__",
             "description": "Wait until specific text appears on screen",
-            "id": 900
+            "id": 2102
         },
         "set timer": {
             "type": "python",
@@ -1478,13 +1478,13 @@
             "type": "python",
             "code": "pyautogui.hotkey('win', 'up')",
             "description": "Maximize or snap window up",
-            "id": 503
+            "id": 2103
         },
         "focus window": {
             "type": "python",
             "code": "import ctypes\nuser32 = ctypes.windll.user32\ndef focus_window(title):\n    def callback(hwnd, _):\n        if user32.IsWindowVisible(hwnd):\n            length = user32.GetWindowTextLengthW(hwnd)\n            if length > 0:\n                buff = ctypes.create_unicode_buffer(length + 1)\n                user32.GetWindowTextW(hwnd, buff, length + 1)\n                if title.lower() in buff.value.lower():\n                    user32.SetForegroundWindow(hwnd)\n                    return False\n        return True\n    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)\n    user32.EnumWindows(WNDENUMPROC(callback), 0)\nfocus_window('__VAR__')",
             "description": "Switch focus to a window matching the title",
-            "id": 200
+            "id": 2111
         },
         "set anchor": {
             "type": "python",
@@ -1502,13 +1502,13 @@
             "type": "python",
             "code": "SYSTEM:NOTEDOWN:__VAR__",
             "description": "Write commands to Notepad and execute them sequentially (Batch Mode)",
-            "id": 402
+            "id": 2104
         },
         "mew reg": {
             "type": "python",
             "code": "if 'session_manager' in locals() and session_manager: session_manager.start_recording('__VAR__')",
             "description": "Alias for mew record (Register new session)",
-            "id": 233
+            "id": 2112
         },
         "_comment_windows_system": "=== WINDOWS SYSTEM COMMANDS ===",
         "open task manager": {
