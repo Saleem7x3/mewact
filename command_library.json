@@ -1503,6 +1503,12 @@
             "code": "SYSTEM:NOTEDOWN:__VAR__",
             "description": "Write commands to Notepad and execute them sequentially (Batch Mode)",
             "id": 402
+        },
+        "mew reg": {
+            "type": "python",
+            "code": "if 'session_manager' in locals() and session_manager: session_manager.start_recording('__VAR__')",
+            "description": "Alias for mew record (Register new session)",
+            "id": 233
         }
     }
 }

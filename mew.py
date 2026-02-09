@@ -87,7 +87,9 @@ def check_deps():
         sys.exit(1)
     print(f"{Fore.GREEN}[*] System Ready. ID-Selector Mode Active.")
 
-check_deps()
+# Only check deps when running directly, not when imported
+if __name__ == "__main__":
+    check_deps()
 
 # --- GLOBAL VARIABLE STORE ---
 class VariableStore:
@@ -1405,7 +1407,8 @@ def complex_mew_act(exec_locals):
         except Exception as e:
             print(f"{Fore.RED}[!] Send fallback error: {e}")
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for CLI execution."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", type=str, help="Target window title")
     parser.add_argument("--monitors", type=str, help="Monitor indices (comma-separated, e.g., '1' or '1,2')")
@@ -1512,3 +1515,7 @@ if __name__ == "__main__":
         wd.start()
     
     PassiveSentinel(p, b, h).start()
+
+
+if __name__ == "__main__":
+    main()
