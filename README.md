@@ -45,7 +45,11 @@ Claude can now control your desktop:
 | `type_text("text")` | ⌨️ Type text with human-like timing |
 | `press_key("ctrl+s")` | ⚡ Keyboard shortcuts |
 | `drag_drop(x1, y1, x2, y2)` | ↕️ Drag and drop |
-| `smart_action("click", "Submit")` | 🚀 All-in-one workflow |
+| `execute_script("code")` | 🐍 Run Python code directly (safe mode) |
+| `describe_screen("prompt")` | 🧠 VLM screen understanding (requires Ollama) |
+| `focus_window("title")` | 🪟 Switch to specific app |
+| `get/set_clipboard()` | 📋 Manage clipboard content |
+| `check_screen_changed()` | ⚡ Differential screenshot detection |
 | `execute_command(700)` | 📚 Run command by ID |
 | `list_commands("word")` | 📖 Search command library |
 

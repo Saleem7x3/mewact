@@ -57,6 +57,36 @@ click_at_normalized(1000, 1000) # Bottom-right
 
 ---
 
+## Advanced Screen Understanding (Phase 2)
+
+### Colored Set-of-Mark
+Annotates screenshots with type-specific colors:
+- 🔴 Red: Buttons
+- 🔵 Blue: Inputs
+- 🟢 Green: Links
+- 🟡 Yellow: Checkboxes
+
+### Local VLM Support
+Use `describe_screen()` to send screenshots to a local Vision-Language Model (like Moondream or LLaVA via Ollama) for semantic understanding when OCR fails.
+
+### Differential Screenshots
+Use `check_screen_changed()` to avoid sending redundant screenshots, saving tokens and reducing latency.
+
+---
+
+## Differentiation Features (Phase 3)
+
+### Code Mode
+Execute Python code directly on the desktop with `execute_script()`. Includes safety checks for dangerous commands (e.g., recursive delete, format).
+
+### Window Management
+Focus specific applications with `focus_window("Chrome")` and list visible windows with `list_windows()`.
+
+### Clipboard
+Read and write clipboard content directly with `get_clipboard()` and `set_clipboard()`.
+
+---
+
 ## Command Library (400+)
 
 ### Categories

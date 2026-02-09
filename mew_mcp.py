@@ -1101,18 +1101,239 @@ def scroll(direction: str = "down", amount: int = 3) -> str:
     return f"Scrolled {direction} by {amount}"
 
 
+# ==============================================================================
+# PHASE 3: DIFFERENTIATION FEATURES
+# ==============================================================================
+
+# Dangerous actions that require confirmation
+DANGEROUS_PATTERNS = [
+    "shutdown", "restart", "reboot", "format", "delete", "remove",
+    "rmdir", "rd /s", "rm -rf", "uninstall", "wipe", "factory reset"
+]
+
+
+@mcp.tool()
+def execute_script(code: str, language: str = "python") -> dict:
+    """
+    🐍 Execute Python code directly on the desktop.
+    
+    USE THIS WHEN:
+    - Complex automation requiring multiple steps
+    - Custom logic that can't be done with other tools
+    - Batch operations
+    
+    SAFETY:
+    - Code runs with YOUR user permissions
+    - Dangerous patterns trigger warning
+    
+    Args:
+        code: Python code to execute
+        language: Currently only "python" supported
+    
+    Returns:
+        - output: Stdout from execution
+        - error: Any errors
+        - result: Return value if any
+    
+    Examples:
+    - execute_script("import os; print(os.getcwd())")
+    - execute_script("for i in range(5): pyautogui.press('down')")
+    """
+    if language != "python":
+        return {"error": f"Unsupported language: {language}. Only 'python' supported."}
+    
+    # Check for dangerous patterns
+    code_lower = code.lower()
+    for pattern in DANGEROUS_PATTERNS:
+        if pattern in code_lower:
+            return {
+                "error": f"BLOCKED: Code contains dangerous pattern '{pattern}'",
+                "code": code,
+                "action_required": "User must manually run this code or approve via UI"
+            }
+    
+    # Execute the code
+    import io
+    from contextlib import redirect_stdout, redirect_stderr
+    
+    stdout_capture = io.StringIO()
+    stderr_capture = io.StringIO()
+    result = None
+    
+    # Provide common imports in the execution context
+    exec_globals = {
+        "pyautogui": pyautogui,
+        "time": time,
+        "os": os,
+        "json": json,
+        "random": random,
+        "math": math,
+    }
+    
+    try:
+        with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+            exec(code, exec_globals)
+            # Check if there's a result variable
+            result = exec_globals.get("result", None)
+        
+        return {
+            "status": "success",
+            "output": stdout_capture.getvalue()[:2000],
+            "error": stderr_capture.getvalue()[:500] if stderr_capture.getvalue() else None,
+            "result": str(result) if result else None
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": stderr_capture.getvalue()[:500]
+        }
+
+
+@mcp.tool()
+def focus_window(title: str, exact: bool = False) -> dict:
+    """
+    🪟 Find and focus a window by title.
+    
+    USE THIS WHEN:
+    - Need to switch to a specific application
+    - Want to ensure correct window before automation
+    
+    Args:
+        title: Window title to search for (case-insensitive)
+        exact: If True, require exact match; if False, partial match OK
+    
+    Returns:
+        - status: "focused" or "not_found"
+        - window_title: Actual window title found
+    
+    Examples:
+    - focus_window("Chrome") → Focus any Chrome window
+    - focus_window("Untitled - Notepad", exact=True) → Focus exact window
+    """
+    if not PYWINAUTO_AVAILABLE:
+        return {"error": "pywinauto not available for window management"}
+    
+    try:
+        from pywinauto import Desktop
+        
+        desktop = Desktop(backend="uia")
+        windows = desktop.windows()
+        
+        title_lower = title.lower()
+        
+        for win in windows:
+            try:
+                win_title = win.window_text()
+                if exact:
+                    match = win_title.lower() == title_lower
+                else:
+                    match = title_lower in win_title.lower()
+                
+                if match:
+                    win.set_focus()
+                    time.sleep(0.3)
+                    return {
+                        "status": "focused",
+                        "window_title": win_title
+                    }
+            except:
+                continue
+        
+        return {
+            "status": "not_found",
+            "searched_for": title
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def list_windows() -> list:
+    """
+    📋 List all visible windows.
+    
+    USE THIS WHEN:
+    - Need to find a window to focus
+    - Checking what applications are open
+    
+    Returns:
+        List of window titles
+    """
+    if not PYWINAUTO_AVAILABLE:
+        return [{"error": "pywinauto not available"}]
+    
+    try:
+        from pywinauto import Desktop
+        
+        desktop = Desktop(backend="uia")
+        windows = desktop.windows()
+        
+        result = []
+        for win in windows:
+            try:
+                title = win.window_text()
+                if title and len(title) > 0:
+                    result.append(title)
+            except:
+                continue
+        
+        return result[:30]  # Limit to 30 windows
+        
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
+@mcp.tool()
+def get_clipboard() -> str:
+    """
+    📋 Get current clipboard contents.
+    
+    Returns:
+        Clipboard text content
+    """
+    try:
+        import win32clipboard
+        win32clipboard.OpenClipboard()
+        try:
+            data = win32clipboard.GetClipboardData(win32clipboard.CF_UNICODETEXT)
+            return data
+        except:
+            return "[Clipboard is empty or contains non-text data]"
+        finally:
+            win32clipboard.CloseClipboard()
+    except Exception as e:
+        return f"[Error reading clipboard: {e}]"
+
+
+@mcp.tool()
+def set_clipboard(text: str) -> str:
+    """
+    📋 Set clipboard contents.
+    
+    Args:
+        text: Text to copy to clipboard
+    
+    Returns:
+        Status message
+    """
+    try:
+        import win32clipboard
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardText(text, win32clipboard.CF_UNICODETEXT)
+        win32clipboard.CloseClipboard()
+        return f"Copied {len(text)} chars to clipboard"
+    except Exception as e:
+        return f"Error: {e}"
+
+
 # --- ENTRY POINT ---
 if __name__ == "__main__":
-    print(f"{Fore.GREEN}[MCP] MewAct Desktop Server v2.1 Starting...")
-    print(f"{Fore.CYAN}[MCP] Phase 1 Features:")
-    print(f"{Fore.CYAN}  - Smart Screenshots (UIA): {PYWINAUTO_AVAILABLE}")
-    print(f"{Fore.CYAN}  - Coordinate Normalization: 0-{COORD_RANGE} system")
-    print(f"{Fore.CYAN}  - Image Optimization: Max {MAX_IMAGE_EDGE}px edge")
-    print(f"{Fore.CYAN}  - Smooth Mouse: Bezier curves")
-    print(f"{Fore.CYAN}[MCP] Phase 2 Features:")
-    print(f"{Fore.CYAN}  - Colored Set-of-Mark: Type-based colors")
-    print(f"{Fore.CYAN}  - VLM Describe: describe_screen()")
-    print(f"{Fore.CYAN}  - Differential Screenshots: check_screen_changed()")
-    print(f"{Fore.YELLOW}[MCP] Tools: capture_screen, click_element, click_at_normalized, click_text, type_text, press_key, drag_drop, execute_command, smart_action, list_commands, get_screen_info, describe_screen, check_screen_changed, scroll")
+    print(f"{Fore.GREEN}[MCP] MewAct Desktop Server v2.2 Starting...")
+    print(f"{Fore.CYAN}[MCP] Phase 1: Smart Screenshots, Coord Normalization, Smooth Mouse")
+    print(f"{Fore.CYAN}[MCP] Phase 2: Colored Markers, VLM Describe, Differential Screenshots")
+    print(f"{Fore.CYAN}[MCP] Phase 3: Code Mode, Window Focus, Clipboard")
+    print(f"{Fore.YELLOW}[MCP] Tools (18): capture_screen, click_element, click_at_normalized, click_text, type_text, press_key, drag_drop, execute_command, smart_action, list_commands, get_screen_info, describe_screen, check_screen_changed, scroll, execute_script, focus_window, list_windows, get_clipboard, set_clipboard")
     mcp.run()
-
