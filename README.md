@@ -12,6 +12,7 @@
 ```bash
 pip install mcp pyautogui mss opencv-python numpy pillow colorama pywinauto pywin32 rapidocr-onnxruntime
 ```
+*(Or use Docker: `docker build -t mewact .`)*
 
 ### 2. Configure Claude Desktop
 Add to `claude_desktop_config.json`:

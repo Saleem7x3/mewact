@@ -70,7 +70,13 @@ Annotates screenshots with type-specific colors:
 Use `describe_screen()` to send screenshots to a local Vision-Language Model (like Moondream or LLaVA via Ollama) for semantic understanding when OCR fails.
 
 ### Differential Screenshots
-Use `check_screen_changed()` to avoid sending redundant screenshots, saving tokens and reducing latency.
+Use `check_screen_changed()` to avoid sending redundant shots.
+
+### Hierarchical UI Tree
+Use `get_ui_tree(depth=3)` to get a JSON structure of the active window's UI elements (Parent → Child). Useful for complex forms or ambiguous buttons.
+
+### OmniParser Support (Client)
+Use `omniparser_parse(image)` to connect to an external OmniParser server for structured UI understanding. (Requires separate model server).
 
 ---
 
@@ -173,3 +179,19 @@ pip install pywinauto
 # Legacy Mode
 pip install ollama rapidocr-onnxruntime
 ```
+
+---
+
+## 🐳 Docker Deployment
+
+Run MewAct in a container with Xvfb (Virtual Display):
+
+```bash
+# Build
+docker build -t mewact .
+
+# Run
+docker run -d -p 8080:8080 mewact
+```
+
+Useful for cloud deployment or headless environments.
