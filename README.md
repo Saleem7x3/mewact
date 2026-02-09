@@ -2,11 +2,12 @@
 
 **AI Desktop Control via MCP + 400+ Commands**
 
-> MewAct is a Model Context Protocol (MCP) server that enables AI assistants (Claude, GPT, Gemini) to control your Windows PC. It also supports **direct control from chatbots like Gemini/ChatGPT** without CLI (via legacy OCR triggers). Features smart screenshots, coordinate normalization, human-like mouse movements, and a 400+ command library.
+> **MewAct** is a powerful AI desktop control bridge. Primarily designed as a **Model Context Protocol (MCP)** server for Claude/IDEs, it also features a robust **Legacy Mode** for direct control via standard chatbots like ChatGPT/Gemini (OCR-based). Features smart screenshots, coordinate normalization, human-like mouse movements, and a 400+ command library.
 
 ---
 
 ## 🚀 Quick Start (MCP Mode)
+*(Looking for Legacy/Chatbot Mode? [Click here](#-legacy-mode-chatbot-support))*
 
 ### 1. Install
 ```bash
@@ -86,7 +87,7 @@ list_commands("browser")  # Find browser commands
 
 ---
 
-## 🔧 Legacy Mode (Trigger-Based)
+## 🔌 Legacy Mode (Chatbot Support)
 
 For direct LLM control via OCR triggers:
 
