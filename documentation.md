@@ -7,13 +7,13 @@ MewAct operates in two modes:
 ### Mode 1: MCP Server (Recommended)
 ```
 ┌─────────────┐     ┌─────────────────┐     ┌─────────────┐
-│ Claude/GPT  │────▶│  mew_mcp.py     │────▶│   Desktop   │
+│ Claude/GPT  │────▶│ mewact_mcp.py   │────▶│   Desktop   │
 │ (AI Client) │◀────│  (MCP Server)   │◀────│   Windows   │
 └─────────────┘     └─────────────────┘     └─────────────┘
                             │
                             ▼
                     ┌───────────────┐
-                    │ mew.py core   │
+                    │ mewact_legacy.py│
                     │ (OCR, Input)  │
                     └───────────────┘
 ```
@@ -21,7 +21,7 @@ MewAct operates in two modes:
 ### Mode 2: Legacy (OCR Trigger)
 ```
 ┌─────────────┐     ┌─────────────────┐     ┌─────────────┐
-│ Cloud LLM   │────▶│   Screen OCR    │────▶│   mew.py    │
+│ Cloud LLM   │────▶│   Screen OCR    │────▶│mewact_legacy│
 │ (Chat)      │◀────│   (Triggers)    │◀────│   Engine    │
 └─────────────┘     └─────────────────┘     └─────────────┘
 ```

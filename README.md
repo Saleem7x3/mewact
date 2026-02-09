@@ -21,7 +21,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "mewact": {
       "command": "python",
-      "args": ["C:/path/to/mew_mcp.py"]
+      "args": ["C:/path/to/mewact_mcp.py"]
     }
   }
 }
@@ -93,7 +93,7 @@ For direct LLM control via OCR triggers:
 ```bash
 pip install ollama
 ollama serve
-python mew.py --target "Chrome"
+python mewact_legacy.py --target "Chrome"
 ```
 
 AI outputs triggers in chat:
@@ -111,8 +111,8 @@ See [documentation.md](documentation.md) for full legacy mode details.
 
 | File | Purpose |
 |------|---------|
-| `mew_mcp.py` | **MCP Server** - Main entry point for Claude/AI |
-| `mew.py` | Legacy mode + core engine |
+| `mewact_mcp.py` | **MCP Server** - Main entry point for Claude/AI |
+| `mewact_legacy.py` | Legacy mode + core engine |
 | `command_library.json` | 400+ predefined commands |
 
 ---

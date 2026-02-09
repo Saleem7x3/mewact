@@ -31,4 +31,4 @@ RUN pip3 install mcp pyautogui mss opencv-python-headless numpy pillow colorama
 ENV DISPLAY=:99
 
 # Start Xvfb and MewAct
-CMD Xvfb :99 -screen 0 1920x1080x24 & fluxbox & python3 mew_mcp.py
+CMD Xvfb :99 -screen 0 1920x1080x24 & fluxbox & python3 mewact_mcp.py
