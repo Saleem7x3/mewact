@@ -27,7 +27,7 @@ Add to `claude_desktop_config.json`:
 ```
 
 ### 3. Start Using!
-Claude can now control your desktop:
+Claude can now control your desktop, no not only claude, any LLM can control your desktop:
 - *"Take a screenshot and click the Submit button"*
 - *"Open Chrome, search for Python tutorials, and summarize the first result"*
 - *"Create a new Word document and type a meeting agenda"*
