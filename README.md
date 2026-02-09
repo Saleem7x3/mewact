@@ -50,6 +50,8 @@ Claude can now control your desktop, no not only claude, any LLM can control you
 | `focus_window("title")` | 🪟 Switch to specific app |
 | `get/set_clipboard()` | 📋 Manage clipboard content |
 | `check_screen_changed()` | ⚡ Differential screenshot detection |
+| `get_ui_tree(depth)` | 🌳 Get hierarchical UI structure |
+| `omniparser_parse(img)` | 👁️ OmniParser client (requires server) |
 | `execute_command(700)` | 📚 Run command by ID |
 | `list_commands("word")` | 📖 Search command library |
 
